@@ -1,0 +1,8 @@
+prefix=/home/jongsik/modu_ws/src/dvl_slam_modify/cmake-build-debug/devel
+
+Name: dvl_slam_modify
+Description: Description of dvl_slam_modify
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 
