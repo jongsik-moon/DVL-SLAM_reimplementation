@@ -13,6 +13,7 @@
 #include <image_transport/image_transport.h>
 #include <pcl_ros/transforms.h>
 #include <pcl/filters/passthrough.h>
+#include <Config.h>
 
 using namespace std;
 
@@ -23,11 +24,6 @@ sensor_msgs::PointCloud2::Ptr fromLaser_cloud;
 
 bool visionFlag = false;
 bool lidarFlag = false;
-
-float fx = 730.617807179727;
-float fy = 731.2502851701612;
-float cx = 335.1539179332822;
-float cy = 256.15500058538953;
 
 
 void image_cb(const sensor_msgs::ImageConstPtr& img){
@@ -65,29 +61,16 @@ int main(int argc, char** argv){
   image_transport::Publisher image_pub;
   image_pub = transporter.advertise("/image_calibrated", 1);
 
-  std::string chunkInd;
-
-  std::string str_buf;
-  std::fstream fs;
-
-  fs.open("/home/jongsikmoon/cali_ws/src/cv_bridge/src/cali.csv", std::ios::in);
-  std::vector<float> cali;
-  while(!fs.eof()){
-    getline(fs, str_buf, ',');
-    float tempfloat = stof(str_buf);
-    std::cout << tempfloat << std::endl;
-    cali.push_back(tempfloat);
-  }
-
+  Config config;
 
   //TODO: tranformation matrix 한번에 되게 하기
   while(ros::ok()){
     if(lidarFlag && visionFlag){
-      Eigen::Affine3f transform = pcl::getTransformation(cali[0], cali[1], cali[2], M_PI, 0, 0);
+      Eigen::Affine3f transform = pcl::getTransformation(config.delX, config.delY, config.delZ, M_PI, 0, 0);
       pcl::transformPointCloud (*temp, *pcData, transform);
       for(int i=0; i<pcData->points.size(); i++){
-        float u = fx*(pcData->points[i].y / pcData->points[i].x) + cx;
-        float v = -fy*(pcData->points[i].z / pcData->points[i].x) + cy;
+        float u = config.fx*(pcData->points[i].y / pcData->points[i].x) + config.cx;
+        float v = -config.fy*(pcData->points[i].z / pcData->points[i].x) + config.cy;
         if(u > 0 && u < 688 && v > 0 && v < 516){
           cv::circle(cv_ptr->image, cv::Point(u, v), 2, cv::Scalar(0, 0, 255), 1);
         }

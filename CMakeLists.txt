@@ -16,6 +16,10 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   cv_bridge
 )
+
+find_package(yaml-cpp REQUIRED)
+
+
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -136,7 +140,9 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(dvl_slam_modify src/main.cpp)
+add_executable(dvl_slam_modify
+  src/main.cpp
+  src/Config.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -151,6 +157,7 @@ add_executable(dvl_slam_modify src/main.cpp)
 ## Specify libraries to link a library or executable target against
 target_link_libraries(dvl_slam_modify
   ${catkin_LIBRARIES}
+  yaml-cpp
 )
 
 #############
