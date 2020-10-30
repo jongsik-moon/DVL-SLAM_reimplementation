@@ -61,23 +61,8 @@ int main(int argc, char** argv){
   image_transport::Publisher image_pub;
   image_pub = transporter.advertise("/image_calibrated", 1);
 
-  Config config;
-
   //TODO: tranformation matrix 한번에 되게 하기
   while(ros::ok()){
-    if(lidarFlag && visionFlag){
-      Eigen::Affine3f transform = pcl::getTransformation(config.delX, config.delY, config.delZ, M_PI, 0, 0);
-      pcl::transformPointCloud (*temp, *pcData, transform);
-      for(int i=0; i<pcData->points.size(); i++){
-        float u = config.fx*(pcData->points[i].y / pcData->points[i].x) + config.cx;
-        float v = -config.fy*(pcData->points[i].z / pcData->points[i].x) + config.cy;
-        if(u > 0 && u < 688 && v > 0 && v < 516){
-          cv::circle(cv_ptr->image, cv::Point(u, v), 2, cv::Scalar(0, 0, 255), 1);
-        }
-
-      }
-      image_pub.publish(cv_ptr->toImageMsg());
-    }
     ros::spinOnce();
   }
 }

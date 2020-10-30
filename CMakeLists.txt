@@ -4,9 +4,8 @@ project(dvl_slam_modify)
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
 
-## Find catkin macros and libraries
-## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
-## is used, also find other catkin packages
+LIST( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules )
+
 find_package(catkin REQUIRED COMPONENTS
   image_transport
   laser_geometry
@@ -16,9 +15,17 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   cv_bridge
 )
-
 find_package(yaml-cpp REQUIRED)
+find_package(OpenCV 3.4 REQUIRED)
 
+find_package(PCL REQUIRED)
+
+find_package(Eigen3 REQUIRED)
+find_package(Sophus REQUIRED)
+find_package(DLib REQUIRED)
+find_package(DBoW2 REQUIRED)
+find_library(cholmod REQUIRED)
+find_package(G2O REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -123,8 +130,15 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
- include
- ${catkin_INCLUDE_DIRS}
+  include
+  ${catkin_INCLUDE_DIRS}
+  ${EIGEN3_INCLUDE_DIR}
+  ${Sophus_INCLUDE_DIR}
+  ${PCL_INCLUDE_DIRS}
+  ${CHOLMOD_INCLUDE_DIR}
+  ${G2O_INCLUDE_DIR}
+  ${OpenCV_INCLUDE_DIRS}
+
 )
 
 ## Declare a C++ library
@@ -142,7 +156,17 @@ include_directories(
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(dvl_slam_modify
   src/main.cpp
-  src/Config.cpp)
+  src/Config.cpp
+  src/Frame.cpp
+  src/Tracker.cpp
+  src/GraphOptimizer.cpp
+
+
+
+
+
+
+)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -158,6 +182,22 @@ add_executable(dvl_slam_modify
 target_link_libraries(dvl_slam_modify
   ${catkin_LIBRARIES}
   yaml-cpp
+  ${EIGEN3_LIBS}
+  ${Sophus_LIBS}
+  ${DBoW2_LIBS}
+  ${DLib_LIBS}
+  ${CHOLMOD_LIBRARIES}
+  ${G2O_STUFF_LIBRARY}
+  ${G2O_CORE_LIBRARY}
+  ${G2O_SOLVER_DENSE}
+  ${G2O_SOLVER_EIGEN}
+  ${G2O_SOLVER_CHOLMOD}
+  ${G2O_SOLVER_CSPARSE}
+  ${G2O_SOLVER_CSPARSE_EXTENSION}
+  ${G2O_TYPES_SLAM3D}
+  ${G2O_TYPES_SBA}
+  ${OpenCV_LIBRARIES}
+  ${OpenCV_LIBS}
 )
 
 #############
