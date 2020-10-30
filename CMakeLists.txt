@@ -160,7 +160,7 @@ add_executable(dvl_slam_modify
   src/Frame.cpp
   src/Tracker.cpp
   src/GraphOptimizer.cpp
-
+  src/Sensor.cpp
 
 
 

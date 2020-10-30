@@ -47,7 +47,7 @@ void lidar_cb(const sensor_msgs::LaserScanConstPtr& input){
 }
 
 int main(int argc, char** argv){
-  ros::init(argc, argv, "cali");
+  ros::init(argc, argv, "dvl_reimpl");
   ros::NodeHandle nh;
   pcData = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
   temp = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
