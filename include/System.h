@@ -14,12 +14,18 @@
 
 class System{
 public:
-  System();
+  System(const Config& config_);
   ~System();
 
   void Run();
 
 private:
+  const Config& config_;
+  Frame* frame_;
+  GraphOptimizer* graphOptimizer_;
+  KeyFrame* keyFrame_;
+  Sensor* sensor_;
+  Tracker* tracker_;
 
 };
 

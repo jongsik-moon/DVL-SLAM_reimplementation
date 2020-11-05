@@ -17,13 +17,12 @@ public:
 
   cv::Mat PointCloud2Img();
 
-private:
-
   cv::Mat originalImg_;
-  pcl::PointCloud<pcl::PointXYZ>::Ptr intputCloud_;
+  pcl::PointCloud<pcl::PointXYZ>::Ptr originalCloud_;
 
+
+private:
   const Config &config_;
-
 
 };
 
