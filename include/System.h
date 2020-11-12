@@ -21,11 +21,10 @@ public:
 
 private:
   const Config& config_;
-  Frame* frame_;
-  GraphOptimizer* graphOptimizer_;
-  KeyFrame* keyFrame_;
-  Sensor* sensor_;
-  Tracker* tracker_;
+  Frame frame_;
+  GraphOptimizer graphOptimizer_;
+  KeyFrame keyFrame_;
+  Sensor sensor_;
 
 };
 

@@ -7,8 +7,9 @@
 
 Config::Config()
 {
-  YAML::Node yamlFile = YAML::LoadFile("../yaml/default_param.yml");
+  YAML::Node yamlFile = YAML::LoadFile("/home/jongsik/modu_ws/src/dvl_slam_modify/yaml/defalut_param.yaml");
   ReadEveryParameter(yamlFile);
+
 }
 
 
@@ -21,6 +22,7 @@ Config::~Config()
 
 void Config::ReadEveryParameter(const YAML::Node yamlFile)
 {
+
   fx = yamlFile["Camera"][0]["fx"].as<float>();
   fy = yamlFile["Camera"][1]["fy"].as<float>();
   cx = yamlFile["Camera"][2]["cx"].as<float>();

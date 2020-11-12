@@ -13,27 +13,35 @@
 #include <opencv2/opencv.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include "Frame.h"
+#include <image_transport/image_transport.h>
 
 class Sensor{
 public:
-  Sensor();
+  Sensor(const Config &config);
   ~Sensor();
 
   void ImgCb(const sensor_msgs::ImageConstPtr& img);
   void PointCloudCb(const sensor_msgs::PointCloud2ConstPtr& input);
   void data2Frame(Frame& frame);
 
+  void publishImg(cv::Mat image);
+
 private:
-  ros::Subscriber imgSub;
-  ros::Subscriber pointCloudSub;
+  const Config& config_;
 
   ros::NodeHandle nh_;
 
-  pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud;
-  cv::Mat input_img;
+  ros::Subscriber imgSub;
+  ros::Subscriber pointCloudSub;
 
-  bool lidarFlag;
-  bool imgFlag;
+  image_transport::ImageTransport it = image_transport::ImageTransport(ros::NodeHandle());
+  image_transport::Publisher imgPub;
+
+  pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud_;
+  cv::Mat input_img_;
+
+  bool lidarFlag_;
+  bool imgFlag_;
 
 };
 

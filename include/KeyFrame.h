@@ -5,8 +5,12 @@
 #ifndef DVL_SLAM_MODIFY_KEYFRAME_H
 #define DVL_SLAM_MODIFY_KEYFRAME_H
 
-class KeyFrame{
+#include "Config.h"
 
+class KeyFrame{
+public:
+  KeyFrame(const Config &config);
+  ~KeyFrame();
 
 };
 

@@ -5,8 +5,27 @@
 #ifndef DVL_SLAM_MODIFY_CONFIG_H
 #define DVL_SLAM_MODIFY_CONFIG_H
 
-
 #include <yaml-cpp/yaml.h>
+
+struct Camera
+{
+  float fx;
+  float fy;
+  float cx;
+  float cy;
+  float k1;
+  float k2;
+  float p1;
+  float p2;
+  float k3;
+};
+
+struct Extrinsic
+{
+  float delX;
+  float delY;
+  float delZ;
+};
 
 class Config{
 public:

@@ -4,7 +4,7 @@
 
 #include "GraphOptimizer.h"
 
-GraphOptimizer::GraphOptimizer()
+GraphOptimizer::GraphOptimizer(const Config &config)
 {
 
 

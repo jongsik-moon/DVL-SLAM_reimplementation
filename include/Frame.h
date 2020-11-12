@@ -20,6 +20,12 @@ public:
   cv::Mat originalImg_;
   pcl::PointCloud<pcl::PointXYZ>::Ptr originalCloud_;
 
+  void setImg();
+  void setPointCloud();
+
+  void showImg(cv::Mat& img);
+  void saveImg(cv::Mat& img);
+  cv::Mat pointCloudProjection(cv::Mat& img, pcl::PointCloud<pcl::PointXYZ>::Ptr pointCloud);
 
 private:
   const Config &config_;
