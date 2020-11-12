@@ -9,7 +9,6 @@ Config::Config()
 {
   YAML::Node yamlFile = YAML::LoadFile("/home/jongsik/modu_ws/src/dvl_slam_modify/yaml/defalut_param.yaml");
   ReadEveryParameter(yamlFile);
-
 }
 
 
@@ -22,20 +21,20 @@ Config::~Config()
 
 void Config::ReadEveryParameter(const YAML::Node yamlFile)
 {
+  YAML::Node cameraYaml = yamlFile["Camera"];
+  YAML::Node extrinsicYaml = yamlFile["Extrinsic"];
 
-  fx = yamlFile["Camera"][0]["fx"].as<float>();
-  fy = yamlFile["Camera"][1]["fy"].as<float>();
-  cx = yamlFile["Camera"][2]["cx"].as<float>();
-  cy = yamlFile["Camera"][3]["cy"].as<float>();
+  fx = cameraYaml["fx"].as<float>();
+  fy = cameraYaml["fy"].as<float>();
+  cx = cameraYaml["cx"].as<float>();
+  cy = cameraYaml["cy"].as<float>();
+  k1 = cameraYaml["k1"].as<float>();
+  k2 = cameraYaml["k2"].as<float>();
+  p1 = cameraYaml["p1"].as<float>();
+  p2 = cameraYaml["p2"].as<float>();
+  k3 = cameraYaml["k3"].as<float>();
 
-  k1 = yamlFile["Camera"][4]["k1"].as<float>();
-  k2 = yamlFile["Camera"][5]["k2"].as<float>();
-  k3 = yamlFile["Camera"][6]["k3"].as<float>();
-  p1 = yamlFile["Camera"][7]["p1"].as<float>();
-  p2 = yamlFile["Camera"][8]["p2"].as<float>();
-
-  delX = yamlFile["Extrinsic"][0]["delX"].as<float>();
-  delY = yamlFile["Extrinsic"][1]["delY"].as<float>();
-  delZ = yamlFile["Extrinsic"][2]["delZ"].as<float>();
-
+  delX = extrinsicYaml["delX"].as<float>();
+  delY = extrinsicYaml["delY"].as<float>();
+  delZ = extrinsicYaml["delZ"].as<float>();
 }

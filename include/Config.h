@@ -46,6 +46,9 @@ public:
   float delY;
   float delZ;
 
+  Camera camera;
+  Extrinsic extrinsic;
+
 private:
   void ReadEveryParameter(YAML::Node yamlFile);
 };
