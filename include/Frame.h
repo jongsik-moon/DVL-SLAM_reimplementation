@@ -18,17 +18,21 @@ public:
   cv::Mat PointCloud2Img();
 
   cv::Mat originalImg_;
-  pcl::PointCloud<pcl::PointXYZ>::Ptr originalCloud_;
+  pcl::PointCloud<pcl::PointXYZ> originalCloud_;
 
   void setImg();
   void setPointCloud();
 
   void showImg(cv::Mat& img);
   void saveImg(cv::Mat& img);
-  cv::Mat pointCloudProjection(cv::Mat& img, pcl::PointCloud<pcl::PointXYZ>::Ptr pointCloud);
+  cv::Mat pointCloudProjection();
 
 private:
   const Config &config_;
+
+  ros::NodeHandle nh_;
+  ros::Publisher pcPub;
+  sensor_msgs::PointCloud2 publish_cloud;
 
 };
 

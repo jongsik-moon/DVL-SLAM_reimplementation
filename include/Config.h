@@ -25,6 +25,16 @@ struct Extrinsic
   float delX;
   float delY;
   float delZ;
+
+  float r11;
+  float r12;
+  float r13;
+  float r21;
+  float r22;
+  float r23;
+  float r31;
+  float r32;
+  float r33;
 };
 
 class Config{
@@ -45,6 +55,16 @@ public:
   float delX;
   float delY;
   float delZ;
+
+  float r11;
+  float r12;
+  float r13;
+  float r21;
+  float r22;
+  float r23;
+  float r31;
+  float r32;
+  float r33;
 
   Camera camera;
   Extrinsic extrinsic;

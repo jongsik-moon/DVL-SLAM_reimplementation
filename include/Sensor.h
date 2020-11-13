@@ -40,6 +40,7 @@ private:
   pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud_;
   cv::Mat input_img_;
 
+
   bool lidarFlag_;
   bool imgFlag_;
 

@@ -7,8 +7,7 @@
 Frame::Frame(const Config &config)
   : config_(config)
 {
-  pcl::PointCloud<pcl::PointXYZ>::Ptr originalCloud_ = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
-
+  pcPub = nh_.advertise<sensor_msgs::PointCloud2>("publish_cloud", 1);
 }
 
 Frame::~Frame(){
@@ -16,19 +15,94 @@ Frame::~Frame(){
 
 }
 
-cv::Mat Frame::pointCloudProjection(cv::Mat& img, pcl::PointCloud<pcl::PointXYZ>::Ptr pointCloud)
+cv::Mat Frame::pointCloudProjection()
 {
-  cv::Mat projectedImg = img.clone();
+  cv::Mat projectedImg = originalImg_.clone();
 
-  Eigen::Affine3f transform = pcl::getTransformation(config_.delX, config_.delY, config_.delZ, M_PI, 0, 0);
-  pcl::transformPointCloud (*originalCloud_, *pointCloud, transform);
-  for(int i=0; i<pointCloud->points.size(); i++){
-    float u = config_.fx*(pointCloud->points[i].y / pointCloud->points[i].x) + config_.cx;
-    float v = -config_.fy*(pointCloud->points[i].z / pointCloud->points[i].x) + config_.cy;
-    if(u > 0 && u < 688 && v > 0 && v < 516){
-      cv::circle(projectedImg, cv::Point(u, v), 2, cv::Scalar(0, 0, 255), 1);
+  cv::Mat cameraMatrix = cv::Mat::eye(3,3,CV_64FC1);
+  cv::Mat distCoeffs = cv::Mat::zeros(1,5,CV_64FC1);
+  cameraMatrix = (cv::Mat1d(3,3) << config_.fx, 0.0, config_.cx, 0.0, config_.fy, config_.cy, 0.0, 0.0, 1.0);
+  distCoeffs = (cv::Mat1d(1,5) << config_.k1, config_.k2, config_.p1, config_.p2, config_.k3);
+  cv::Mat map1, map2;
+  cv::Size imageSize = cv::Size(1226, 370);
+  cv::initUndistortRectifyMap(cameraMatrix, distCoeffs, cv::Mat(), cameraMatrix, imageSize, CV_32FC1, map1, map2);
+
+  if(!projectedImg.empty()){
+    cv::remap(projectedImg, projectedImg, map1, map2, CV_INTER_LINEAR);
+  }
+
+  pcl::PointCloud<pcl::PointXYZ>::Ptr transformedCloud = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
+
+  Eigen::Matrix4f transform = Eigen::Matrix4f::Identity();
+
+  transform (0,0) = config_.r11;
+  transform (0,1) = config_.r12;
+  transform (0,2) = config_.r13;
+
+  transform (1,0) = config_.r21;
+  transform (1,1) = config_.r22;
+  transform (1,2) = config_.r23;
+
+  transform (2,0) = config_.r31;
+  transform (2,1) = config_.r32;
+  transform (2,2) = config_.r33;
+
+  transform (0,3) = config_.delX;
+  transform (1,3) = config_.delY;
+  transform (2,3) = config_.delZ;
+
+  pcl::transformPointCloud (originalCloud_, *transformedCloud, transform);
+
+
+  pcl::toROSMsg(*transformedCloud, publish_cloud);
+  publish_cloud.header.frame_id = "world";
+  publish_cloud.header.stamp = ros::Time::now();
+  pcPub.publish(publish_cloud);
+
+
+  for(int i=0; i<transformedCloud->points.size(); i++)
+  {
+    if(transformedCloud->points[i].z > 1.0){
+
+
+      float U = config_.fx * (transformedCloud->points[i].x / transformedCloud->points[i].z) + config_.cx;
+      float V = config_.fy * (transformedCloud->points[i].y / transformedCloud->points[i].z) + config_.cy;
+
+      float v_min = 1.0;    float v_max = 50.0;    float dv = v_max - v_min;
+      float v = transformedCloud->points[i].z;
+      float r = 1.0; float g = 1.0; float b = 1.0;
+      if (v < v_min)   v = v_min;
+      if (v > v_max)   v = v_max;
+
+      if(v < v_min + 0.25*dv) {
+        r = 0.0;
+        g = 4*(v - v_min) / dv;
+      }
+      else if (v < (v_min + 0.5 * dv)) {
+        r = 0.0;
+        b = 1 + 4*(v_min + 0.25 * dv - v) / dv;
+      }
+      else if (v < (v_min + 0.75 * dv)) {
+        r =4 * (v - v_min - 0.5 * dv) / dv;
+        b = 0.0;
+      }
+      else {
+        g = 1 + 4*(v_min + 0.75 * dv - v) / dv;
+        b = 0.0;
+      }
+
+      cv::circle(projectedImg, cv::Point(U, V), 2, cv::Scalar(255*r, 255*g, 255*b), 1);
     }
   }
+
+//  for(int i=0; i<transformedCloud->points.size(); i++)
+//  {
+//    float u = config_.fx*(transformedCloud->points[i].y / transformedCloud->points[i].x) + config_.cx;
+//    float v = -config_.fy*(transformedCloud->points[i].z / transformedCloud->points[i].x) + config_.cy;
+//    if(u > 0 && u < 1200 && v > 0 && v < 500){
+//      cv::circle(projectedImg, cv::Point(u, v), 2, cv::Scalar(0, 0, 255), 1);
+//    }
+//  }
   return projectedImg;
 }
 
