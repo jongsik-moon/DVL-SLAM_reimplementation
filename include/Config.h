@@ -6,6 +6,11 @@
 #define DVL_SLAM_MODIFY_CONFIG_H
 
 #include <yaml-cpp/yaml.h>
+struct Dataset
+{
+  bool isKitti;
+  bool isIndoor;
+};
 
 struct Camera
 {
@@ -37,10 +42,26 @@ struct Extrinsic
   float r33;
 };
 
+struct Rectifying
+{
+  float R11;
+  float R12;
+  float R13;
+  float R21;
+  float R22;
+  float R23;
+  float R31;
+  float R32;
+  float R33;
+};
+
 class Config{
 public:
   Config();
   ~Config();
+
+  bool isKitti;
+  bool isIndoor;
 
   float fx;
   float fy;
@@ -66,8 +87,20 @@ public:
   float r32;
   float r33;
 
+  float R11;
+  float R12;
+  float R13;
+  float R21;
+  float R22;
+  float R23;
+  float R31;
+  float R32;
+  float R33;
+
+  Dataset dataset;
   Camera camera;
   Extrinsic extrinsic;
+  Rectifying rectifying;
 
 private:
   void ReadEveryParameter(YAML::Node yamlFile);

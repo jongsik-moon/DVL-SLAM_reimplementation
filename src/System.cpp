@@ -22,10 +22,7 @@ System::~System(){
 
 
 void System::Run(){
-
-  std::cout << "system run" << std::endl;
   sensor_.data2Frame(frame_);
   sensor_.publishImg(frame_.pointCloudProjection());
-
 
 }

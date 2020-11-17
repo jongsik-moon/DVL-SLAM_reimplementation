@@ -21,8 +21,13 @@ Config::~Config()
 
 void Config::ReadEveryParameter(const YAML::Node yamlFile)
 {
+  YAML::Node datasetYaml = yamlFile["Dataset"];
   YAML::Node cameraYaml = yamlFile["Camera"];
   YAML::Node extrinsicYaml = yamlFile["Extrinsic"];
+  YAML::Node rectifyingYaml = yamlFile["Rectifying"];
+
+  isKitti = datasetYaml["isKitti"].as<bool>();
+  isIndoor = datasetYaml["isIndoor"].as<bool>();
 
   fx = cameraYaml["fx"].as<float>();
   fy = cameraYaml["fy"].as<float>();
@@ -47,5 +52,15 @@ void Config::ReadEveryParameter(const YAML::Node yamlFile)
   r31 = extrinsicYaml["r31"].as<float>();
   r32 = extrinsicYaml["r32"].as<float>();
   r33 = extrinsicYaml["r33"].as<float>();
+
+  R11 = rectifyingYaml["R11"].as<float>();
+  R12 = rectifyingYaml["R12"].as<float>();
+  R13 = rectifyingYaml["R13"].as<float>();
+  R21 = rectifyingYaml["R21"].as<float>();
+  R22 = rectifyingYaml["R22"].as<float>();
+  R23 = rectifyingYaml["R23"].as<float>();
+  R31 = rectifyingYaml["R31"].as<float>();
+  R32 = rectifyingYaml["R32"].as<float>();
+  R33 = rectifyingYaml["R33"].as<float>();
 
 }

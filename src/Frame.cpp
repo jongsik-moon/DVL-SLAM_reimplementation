@@ -19,19 +19,8 @@ cv::Mat Frame::pointCloudProjection()
 {
   cv::Mat projectedImg = originalImg_.clone();
 
-  cv::Mat cameraMatrix = cv::Mat::eye(3,3,CV_64FC1);
-  cv::Mat distCoeffs = cv::Mat::zeros(1,5,CV_64FC1);
-  cameraMatrix = (cv::Mat1d(3,3) << config_.fx, 0.0, config_.cx, 0.0, config_.fy, config_.cy, 0.0, 0.0, 1.0);
-  distCoeffs = (cv::Mat1d(1,5) << config_.k1, config_.k2, config_.p1, config_.p2, config_.k3);
-  cv::Mat map1, map2;
-  cv::Size imageSize = cv::Size(1226, 370);
-  cv::initUndistortRectifyMap(cameraMatrix, distCoeffs, cv::Mat(), cameraMatrix, imageSize, CV_32FC1, map1, map2);
-
-  if(!projectedImg.empty()){
-    cv::remap(projectedImg, projectedImg, map1, map2, CV_INTER_LINEAR);
-  }
-
   pcl::PointCloud<pcl::PointXYZ>::Ptr transformedCloud = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr rectifiedCloud = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
 
   Eigen::Matrix4f transform = Eigen::Matrix4f::Identity();
 
@@ -53,23 +42,42 @@ cv::Mat Frame::pointCloudProjection()
 
   pcl::transformPointCloud (originalCloud_, *transformedCloud, transform);
 
+  Eigen::Matrix4f transformRect = Eigen::Matrix4f::Identity();
 
-  pcl::toROSMsg(*transformedCloud, publish_cloud);
+  transformRect (0,0) = config_.R11;
+  transformRect (0,1) = config_.R12;
+  transformRect (0,2) = config_.R13;
+
+  transformRect (1,0) = config_.R21;
+  transformRect (1,1) = config_.R22;
+  transformRect (1,2) = config_.R23;
+
+  transformRect (2,0) = config_.R31;
+  transformRect (2,1) = config_.R32;
+  transformRect (2,2) = config_.R33;
+
+  transformRect (0,3) = 0;
+  transformRect (1,3) = 0;
+  transformRect (2,3) = 0;
+
+  pcl::transformPointCloud (*transformedCloud, *rectifiedCloud, transformRect);
+
+  pcl::toROSMsg(*rectifiedCloud, publish_cloud);
   publish_cloud.header.frame_id = "world";
   publish_cloud.header.stamp = ros::Time::now();
   pcPub.publish(publish_cloud);
 
 
-  for(int i=0; i<transformedCloud->points.size(); i++)
+  for(int i=0; i<rectifiedCloud->points.size(); i++)
   {
-    if(transformedCloud->points[i].z > 1.0){
+    if(rectifiedCloud->points[i].z > 0.15){
 
 
-      float U = config_.fx * (transformedCloud->points[i].x / transformedCloud->points[i].z) + config_.cx;
-      float V = config_.fy * (transformedCloud->points[i].y / transformedCloud->points[i].z) + config_.cy;
+      float U = config_.fx * (rectifiedCloud->points[i].x / rectifiedCloud->points[i].z) + config_.cx;
+      float V = config_.fy * (rectifiedCloud->points[i].y / rectifiedCloud->points[i].z) + config_.cy;
 
-      float v_min = 1.0;    float v_max = 50.0;    float dv = v_max - v_min;
-      float v = transformedCloud->points[i].z;
+      float v_min = 0.15;    float v_max = 10.0;    float dv = v_max - v_min;
+      float v = rectifiedCloud->points[i].z;
       float r = 1.0; float g = 1.0; float b = 1.0;
       if (v < v_min)   v = v_min;
       if (v > v_max)   v = v_max;

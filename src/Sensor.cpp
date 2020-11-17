@@ -7,13 +7,26 @@
 Sensor::Sensor(const Config &config)
   : config_(config)
 {
-  imgSub = nh_.subscribe("/kitti/camera_color_left/image_raw", 1, &Sensor::ImgCb, this);
-  pointCloudSub = nh_.subscribe("/kitti/velo/pointcloud", 1, &Sensor::PointCloudCb, this);
+  std::string imgTopic;
+  std::string pcTopic;
+  if(config_.isIndoor)
+  {
+    imgTopic = "/image_raw";
+    pcTopic = "/velodyne_points";
+  }
+  else if(config_.isKitti)
+  {
+    imgTopic = "/kitti/camera_color_left/image_raw";
+    pcTopic = "/kitti/velo/pointcloud";
+  }
+
+  imgSub = nh_.subscribe(imgTopic, 1, &Sensor::ImgCb, this);
+  pointCloudSub = nh_.subscribe(pcTopic, 1, &Sensor::PointCloudCb, this);
   imgPub =  it.advertise("/camera/image", 1);
   input_cloud_ = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
 
-
-
+  lidarFlag_ = false;
+  imgFlag_ = false;
 }
 
 Sensor::~Sensor(){
@@ -35,18 +48,19 @@ void Sensor::PointCloudCb(const sensor_msgs::PointCloud2ConstPtr& input){
 
 void Sensor::data2Frame(Frame& frame){
   frame.originalImg_ = input_img_.clone();
-  std::cout << (frame.originalCloud_.points.size()) << std::endl;
   if(lidarFlag_) {
-    std::cout << "input size" << std::endl;
     std::cout << input_cloud_->points.size() << std::endl;
     pcl::copyPointCloud(*input_cloud_, frame.originalCloud_);
-    std::cout << "frame cloud size" << std::endl;
     std::cout << frame.originalCloud_.points.size() << std::endl;
-
   }
 }
 
 void Sensor::publishImg(cv::Mat image){
-  sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", image).toImageMsg();
-  imgPub.publish(msg);
+  cv_bridge::CvImage img_bridge;
+  sensor_msgs::Image img_msg;
+  std_msgs::Header header;
+  header.stamp = ros::Time::now();
+  img_bridge = cv_bridge::CvImage(header, "bgr8", image);
+  img_bridge.toImageMsg(img_msg);
+  imgPub.publish(img_msg);
 }
