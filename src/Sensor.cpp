@@ -4,7 +4,7 @@
 
 #include "Sensor.h"
 
-Sensor::Sensor(const Config &config)
+Sensor::Sensor(Config &config)
   : config_(config)
 {
   std::string imgTopic;

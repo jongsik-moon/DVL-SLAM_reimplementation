@@ -3,7 +3,9 @@
 //
 #include "KeyFrame.h"
 
-KeyFrame::KeyFrame(const Config &config)
+KeyFrame::KeyFrame(Config &config, Frame::Ptr frame)
+  :config_(config),
+  frame(frame)
 {
 
 }

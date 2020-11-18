@@ -4,7 +4,7 @@
 
 #include <Frame.h>
 
-Frame::Frame(const Config &config)
+Frame::Frame(Config &config)
   : config_(config)
 {
   pcPub = nh_.advertise<sensor_msgs::PointCloud2>("publish_cloud", 1);

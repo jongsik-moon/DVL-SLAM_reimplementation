@@ -17,7 +17,7 @@
 
 class Sensor{
 public:
-  Sensor(const Config &config);
+  Sensor(Config &config);
   ~Sensor();
 
   void ImgCb(const sensor_msgs::ImageConstPtr& img);
@@ -27,7 +27,7 @@ public:
   void publishImg(cv::Mat image);
 
 private:
-  const Config& config_;
+  Config& config_;
 
   ros::NodeHandle nh_;
 

@@ -12,7 +12,7 @@
 
 class GraphOptimizer{
 public:
-  GraphOptimizer(const Config &config);
+  GraphOptimizer(Config &config);
   ~GraphOptimizer();
 
   void AddEdge();

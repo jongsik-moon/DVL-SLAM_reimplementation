@@ -11,21 +11,29 @@
 #include "KeyFrame.h"
 #include "Sensor.h"
 #include "Tracker.h"
+#include <sophus/se3.hpp>
 
 class System{
 public:
-  System(const Config& config_);
+  System(Config& config_);
   ~System();
 
   void Run();
 
 private:
-  const Config& config_;
-  Frame frame_;
+  Config& config_;
   GraphOptimizer graphOptimizer_;
-  KeyFrame keyFrame_;
   Sensor sensor_;
+  Tracker tracker_;
 
+  bool initialized_;
+
+  Sophus::SE3f Tij_;
+  Sophus::SE3f Tji_;
+  Sophus::SE3f dTji_;
+
+  std::vector<Frame::Ptr> frameDB_;
+  std::vector<KeyFrame::Ptr> keyFrameDB_;
 };
 
 

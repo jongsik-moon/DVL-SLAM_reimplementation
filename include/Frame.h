@@ -12,7 +12,9 @@
 
 class Frame {
 public:
-  Frame(const Config &config);
+  typedef std::shared_ptr<Frame> Ptr;
+
+  Frame(Config &config);
   ~Frame();
 
   cv::Mat PointCloud2Img();
@@ -28,7 +30,7 @@ public:
   cv::Mat pointCloudProjection();
 
 private:
-  const Config &config_;
+  Config &config_;
 
   ros::NodeHandle nh_;
   ros::Publisher pcPub;
