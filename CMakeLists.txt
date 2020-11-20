@@ -21,7 +21,10 @@ find_package(OpenCV 3.4 REQUIRED)
 
 find_package(PCL REQUIRED)
 
-find_package(Eigen3 REQUIRED)
+find_package(Eigen3 3.3.0 REQUIRED)
+message("{Eigen path} : ${EIGEN3_INCLUDE_DIR}\n")
+message("[Eigen Version] : ${Eigen3_VERSION}")
+
 find_package(Sophus REQUIRED)
 find_package(DLib REQUIRED)
 find_package(DBoW2 REQUIRED)
@@ -57,8 +60,6 @@ add_executable(dvl_slam_modify
 target_link_libraries(dvl_slam_modify
   ${catkin_LIBRARIES}
   yaml-cpp
-  ${EIGEN3_LIBS}
-  ${Sophus_LIBS}
   ${DBoW2_LIBS}
   ${DLib_LIBS}
   ${CHOLMOD_LIBRARIES}

@@ -9,6 +9,7 @@
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl_ros/transforms.h>
 #include "Config.h"
+#include "Datatypes.h"
 
 class Frame {
 public:
@@ -33,6 +34,8 @@ public:
 
   Eigen::Vector2f PointCloudXyz2Uv(Eigen::Vector3f point);
   cv::Mat pointCloudProjection();
+
+  void JacobianXyz2Uv(Eigen::Vector3f& xyzInF, Matrix2x6& J);
 
 private:
   Config &config_;

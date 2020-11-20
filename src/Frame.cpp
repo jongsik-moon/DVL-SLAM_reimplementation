@@ -41,7 +41,7 @@ cv::Mat Frame::pointCloudProjection()
       float U = config_.fx * (originalCloud_.points[i].x / originalCloud_.points[i].z) + config_.cx;
       float V = config_.fy * (originalCloud_.points[i].y / originalCloud_.points[i].z) + config_.cy;
 
-      float v_min = 0.15;    float v_max = 10.0;    float dv = v_max - v_min;
+      float v_min = 0.15;    float v_max = 50.0;    float dv = v_max - v_min;
       float v = originalCloud_.points[i].z;
       float r = 1.0; float g = 1.0; float b = 1.0;
       if (v < v_min)   v = v_min;

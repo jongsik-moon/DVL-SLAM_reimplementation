@@ -21,10 +21,15 @@ public:
 
   void Solve();
   void UpdatePose();
-  void CheckVisiblePoints(Frame::Ptr currFrame, Sophus::SE3f& transformation);
+  void CheckVisiblePointsInPrevFrame(Frame::Ptr currFrame, Sophus::SE3f& transformation);
+  void PrecomputeReferencePatterns();
+  double ComputeResidualsPatterns(Sophus::SE3f& transformation);
   Sophus::SE3f trackFrame2Frame(Frame::Ptr currFrame, KeyFrame::Ptr keyFrame);
 
 private:
+  Frame::Ptr currentFrame_;
+  KeyFrame::Ptr referenceFrame_;
+
   int patch_halfsize_ = 2;
 
   Vector6 x_;
@@ -35,8 +40,8 @@ private:
   Sophus::SE3f prev_Tji_;
   Sophus::SE3f curr_Tji_;
 
-  std::vector<bool> visible_points_;
-  std::vector<bool> visible_points_prev_;
+  std::vector<bool> visiblePoints;
+  std::vector<bool> visiblePointsPrev;
 
 };
 
