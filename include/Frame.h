@@ -35,8 +35,28 @@ public:
   Eigen::Vector2f PointCloudXyz2Uv(Eigen::Vector3f point);
   cv::Mat pointCloudProjection();
 
-  void JacobianXyz2Uv(Eigen::Vector3f& xyzInF, Matrix2x6& J);
+  inline static void jacobian_xyz2uv(const Eigen::Vector3f& xyzFloat, Matrix2x6& J)
+  {
+    const float x = xyzFloat[0];
+    const float y = xyzFloat[1];
+    const float zInv = 1./xyzFloat[2];
+    const float zInv2 = zInv*zInv;
 
+    J(0,0) = -zInv;              // -1/z
+    J(0,1) = 0.0;                 // 0
+    J(0,2) = x*zInv2;           // x/z^2
+    J(0,3) = y*J(0,2);            // x*y/z^2
+    J(0,4) = -(1.0 + x*J(0,2));   // -(1.0 + x^2/z^2)
+    J(0,5) = y*zInv;             // y/z
+
+
+    J(1,0) = 0.0;                 // 0
+    J(1,1) = -zInv;              // -1/z
+    J(1,2) = y*zInv2;           // y/z^2
+    J(1,3) = 1.0 + y*J(1,2);      // 1.0 + y^2/z^2
+    J(1,4) = -J(0,3);             // -x*y/z^2
+    J(1,5) = -x*zInv;            // x/z
+  }
 private:
   Config &config_;
 

@@ -12,6 +12,14 @@
 #include "Datatypes.h"
 
 class Tracker{
+
+  static const int patch_halfsize_ = 2;
+  static const int patch_size_ = 2*patch_halfsize_;
+  static const int patch_area_ = patch_size_*patch_size_;
+
+  static const int pattern_length_ = 8;
+  int pattern_[8][2] = { {0, 0}, {2, 0}, {1, 1}, {0, -2}, {-1, -1}, {-2, 0}, {-1, 1}, {0, 2} };
+
 public:
 
   Tracker(Config &config);
@@ -30,8 +38,6 @@ private:
   Frame::Ptr currentFrame_;
   KeyFrame::Ptr referenceFrame_;
 
-  int patch_halfsize_ = 2;
-
   Vector6 x_;
   Vector6 Jres_;
   Matrix6x6 H_;
@@ -40,9 +46,14 @@ private:
   Sophus::SE3f prev_Tji_;
   Sophus::SE3f curr_Tji_;
 
-  std::vector<bool> visiblePoints;
-  std::vector<bool> visiblePointsPrev;
+  std::vector<bool> visiblePoints_;
+  std::vector<bool> visiblePointsInCur_;
+  std::vector<bool> visiblePointsPrev_;
 
+  std::vector<float> errors_;
+  cv::Mat refPatchBuf_;
+
+  Eigen::Matrix<float, 6, Eigen::Dynamic, Eigen::ColMajor> jacobian_buf_;
 };
 
 

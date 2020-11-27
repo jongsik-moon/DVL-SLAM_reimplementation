@@ -22,13 +22,12 @@ void Tracker::UpdatePose(){
 }
 
 
-
 void Tracker::CheckVisiblePointsInPrevFrame(Frame::Ptr currFrame, Sophus::SE3f& transformation){
   const int border = patch_halfsize_+2;
   cv::Mat& current_img = currFrame->GetOriginalImg();
 
   const float scale = 1.0f;
-  std::vector<bool>::iterator visibilityIterPrev = visiblePointsPrev.begin();
+  std::vector<bool>::iterator visibilityIterPrev = visiblePointsPrev_.begin();
 
   for (auto iter=currFrame->GetOriginalCloud().begin(); iter!=currFrame->GetOriginalCloud().end(); ++iter, ++visibilityIterPrev) {
     Eigen::Vector3f xyz_cur (iter->x, iter->y, iter->z);
@@ -55,7 +54,7 @@ void Tracker::PrecomputeReferencePatterns(){
   const float scale = 1.0f;
 
   size_t pointCounter = 0;
-  std::vector<bool>::iterator visibilityIter = visiblePoints.begin();
+  std::vector<bool>::iterator visibilityIter = visiblePoints_.begin();
 
   cv::Mat zBuff;
   zBuff = cv::Mat::zeros(referenceImg.size(), CV_8U);
@@ -75,11 +74,59 @@ void Tracker::PrecomputeReferencePatterns(){
 
     *visibilityIter = true;
 
+    Matrix2x6 frameJac;
+    Frame::jacobian_xyz2uv(xyzRef, frameJac);
+
+    const float subpixURef = uRefFloat - uRefInt;
+    const float subpixVRef = vRefFloat - vRefInt;
+    const float wRefTL = (1.0-subpixURef) * (1.0-subpixURef);
+    const float wRefTR = subpixURef * (1.0-subpixVRef);
+    const float wRefBL = (1.0-subpixURef) * subpixVRef;
+    const float wRefBR = subpixURef * subpixVRef;
+
+    size_t pixelCounter = 0;
+    float* refPatchBufPtr = reinterpret_cast<float *> (refPatchBuf_.data) + patch_area_ * pointCounter;
+
+    for(int y=0; y<patch_size_; ++y){
+      float *referenceImgPtr = (float*) referenceImg.data + (vRefInt + y - patch_halfsize_) * stride + (uRefInt - patch_halfsize_);
+      for(int x=0; x<patch_size_; ++x, ++referenceImgPtr, ++refPatchBufPtr, ++pixelCounter){
+        *refPatchBufPtr = wRefTL * referenceImgPtr[0] + wRefTR * referenceImgPtr[1] + wRefBL * referenceImgPtr[stride] + wRefBR * referenceImgPtr[stride+1];
+        float dx = 0.5f * ((wRefTL * referenceImgPtr[1] + wRefTR * referenceImgPtr[2] + wRefBL * referenceImgPtr[stride+1] + wRefBR * referenceImgPtr[stride+2])
+                    - (wRefTL * referenceImgPtr[-1] + wRefTR * referenceImgPtr[0] + wRefBL * referenceImgPtr[stride-1] + wRefBR * referenceImgPtr[stride]));
+        float dy = 0.5f * ((wRefTL * referenceImgPtr[stride] + wRefTR * referenceImgPtr[1+stride] + wRefBL * referenceImgPtr[])
+                    -(wRefTL * referenceImgPtr[-stride] + wRefTR * referenceImgPtr[1-stride] + wRefBL * referenceImgPtr[0] + wRefBR * referenceImgPtr[1]));
+
+      }
+    }
   }
 }
 
 double Tracker::ComputeResidualsPatterns(Sophus::SE3f &transformation){
+  errors_.clear();
   cv::Mat& currImg = currentFrame_->GetOriginalImg();
+
+  PrecomputeReferencePatterns();
+
+  errors_.reserve(visiblePoints_.size());
+
+  const float scale = 1.0f;
+  size_t point_counter = 0;
+  std::vector<bool>::iterator visibilityIter = visiblePoints_.begin();
+  std::vector<bool>::iterator visibilityIterCur = visiblePointsInCur_.begin();
+
+  for (auto iter = referenceFrame_->frame->GetOriginalCloud().begin(); iter!=referenceFrame_->frame->GetOriginalCloud().end(); ++iter, ++point_counter, ++visibilityIterCur){
+    Eigen::Vector3f xyzRef(iter->x, iter->y, iter->z);
+    Eigen::Vector3f xyzCur = transformation * xyzRef;
+    Eigen::Vector2f uvCur;
+    uvCur.noalias() = referenceFrame_->frame->PointCloudXyz2Uv(xyzCur) * scale;
+
+    const float uCurFloat = uvCur(0);
+    const float vCurFloat = uvCur(1);
+    const int uCurInt = static_cast<int>(uCurFloat);
+    const int vCurInt = static_cast<int>(vCurFloat);
+
+
+  }
 
 }
 
