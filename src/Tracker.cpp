@@ -6,7 +6,7 @@
 Tracker::Tracker(Config &config)
   : config_(config)
 {
-
+  huberK = 1.345;
 }
 
 Tracker::~Tracker(){
@@ -21,6 +21,14 @@ void Tracker::UpdatePose(){
   prev_Tji_ = curr_Tji_ * Sophus::SE3f::exp(-x_);
 }
 
+float Tracker::HuberWeight(const float res){
+  float tAbs = fabsf(res);
+  float sig = 5.0;
+  if(tAbs < huberK_ * sig)
+    return 1.0;
+  else
+    return sig*huberK_ / tAbs;
+}
 
 void Tracker::CheckVisiblePointsInPrevFrame(Frame::Ptr currFrame, Sophus::SE3f& transformation){
   const int border = patch_halfsize_+2;
@@ -90,31 +98,40 @@ void Tracker::PrecomputeReferencePatterns(){
     for(int y=0; y<patch_size_; ++y){
       float *referenceImgPtr = (float*) referenceImg.data + (vRefInt + y - patch_halfsize_) * stride + (uRefInt - patch_halfsize_);
       for(int x=0; x<patch_size_; ++x, ++referenceImgPtr, ++refPatchBufPtr, ++pixelCounter){
-        *refPatchBufPtr = wRefTL * referenceImgPtr[0] + wRefTR * referenceImgPtr[1] + wRefBL * referenceImgPtr[stride] + wRefBR * referenceImgPtr[stride+1];
+        *refPatchBufPtr = wRefTL * referenceImgPtr[0] + wRefTR * referenceImgPtr[1] + wRefBL * referenceImgPtr[stride+1] + wRefBR * referenceImgPtr[stride+2];
         float dx = 0.5f * ((wRefTL * referenceImgPtr[1] + wRefTR * referenceImgPtr[2] + wRefBL * referenceImgPtr[stride+1] + wRefBR * referenceImgPtr[stride+2])
                     - (wRefTL * referenceImgPtr[-1] + wRefTR * referenceImgPtr[0] + wRefBL * referenceImgPtr[stride-1] + wRefBR * referenceImgPtr[stride]));
-        float dy = 0.5f * ((wRefTL * referenceImgPtr[stride] + wRefTR * referenceImgPtr[1+stride] + wRefBL * referenceImgPtr[])
+        float dy = 0.5f * ((wRefTL * referenceImgPtr[stride] + wRefTR * referenceImgPtr[1+stride] + wRefBL * referenceImgPtr[stride*2] + wRefBR * referenceImgPtr[stride*2 + 1])
                     -(wRefTL * referenceImgPtr[-stride] + wRefTR * referenceImgPtr[1-stride] + wRefBL * referenceImgPtr[0] + wRefBR * referenceImgPtr[1]));
 
+        jacobianBuf_.col(pointCounter*patch_area_ + pixelCounter) = (dx*config_.fx * frameJac.row(0) + dy*config_.fy*frameJac.row(1)) /  (1);
       }
     }
   }
+  isSetRefPatch_ = true;
 }
 
 double Tracker::ComputeResidualsPatterns(Sophus::SE3f &transformation){
   errors_.clear();
   cv::Mat& currImg = currentFrame_->GetOriginalImg();
 
-  PrecomputeReferencePatterns();
+  if(!isSetRefPatch_){
+    PrecomputeReferencePatterns();
+  }
+
 
   errors_.reserve(visiblePoints_.size());
 
-  const float scale = 1.0f;
-  size_t point_counter = 0;
+  const int stride = currImg.cols;
+  const int border = patch_halfsize_+2;
+  const float scale = 1.0f/(1<<currentLevel_);
+
+  float chi2 = 0.0;
+  size_t pointCounter = 0;
   std::vector<bool>::iterator visibilityIter = visiblePoints_.begin();
   std::vector<bool>::iterator visibilityIterCur = visiblePointsInCur_.begin();
 
-  for (auto iter = referenceFrame_->frame->GetOriginalCloud().begin(); iter!=referenceFrame_->frame->GetOriginalCloud().end(); ++iter, ++point_counter, ++visibilityIterCur){
+  for (auto iter = referenceFrame_->frame->GetOriginalCloud().begin(); iter!=referenceFrame_->frame->GetOriginalCloud().end(); ++iter, ++pointCounter, ++visibilityIterCur){
     Eigen::Vector3f xyzRef(iter->x, iter->y, iter->z);
     Eigen::Vector3f xyzCur = transformation * xyzRef;
     Eigen::Vector2f uvCur;
@@ -125,8 +142,45 @@ double Tracker::ComputeResidualsPatterns(Sophus::SE3f &transformation){
     const int uCurInt = static_cast<int>(uCurFloat);
     const int vCurInt = static_cast<int>(vCurFloat);
 
+    if(uCurInt - border < 0 || uCurInt + border > currImg.cols || vCurInt - border < 0 || vCurInt + border > currImg.cols)
+      continue;
 
+    *visibilityIterCur = true;
+
+    const float subpixUCur = uCurFloat - uCurInt;
+    const float subpixVCur = vCurFloat - vCurInt;
+    const float wCurTL = (1.0-subpixUCur) * (1.0-subpixUCur);
+    const float wCurTR = subpixUCur * (1.0-subpixVCur);
+    const float wCurBL = (1.0-subpixUCur) * subpixVCur;
+    const float wCurBR = subpixUCur * subpixVCur;
+
+    float* refPatchBufPtr = reinterpret_cast<float *> (refPatchBuf_.data) + pattern_length_ * pointCounter;
+
+    size_t pixelCounter = 0;
+
+    for(int i=0; i<pattern_length_; ++i, ++pixelCounter, ++refPatchBufPtr){
+      int x = pattern_[i][0];
+      int y = pattern_[i][1];
+
+      float* currImgPtr = (float*)currImg.data + (vCurInt + y) * stride + (uCurInt + x);
+      float intensityCur = wCurTL*currImgPtr[0] + wCurTR*currImgPtr[1] + wCurBL*currImgPtr[stride] + wCurBR*currImgPtr[stride+1];
+      float res = intensityCur - (*refPatchBufPtr);
+
+      float weight = 1.0;
+
+      weight = HuberWeight(res/scale);
+      errors_.push_back(res);
+
+      chi2+=res*res*weight;
+
+      nMeasurement_++;
+
+      Vector6 J(jacobianBuf_.col(pointCounter*pattern_length_ + pixelCounter));
+      H_.noalias() += J*J.transpose()*weight;
+      Jres_.noalias() -= J*res*weight;
+    }
   }
+  return chi2/nMeasurement_;
 
 }
 

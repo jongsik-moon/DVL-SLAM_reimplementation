@@ -29,6 +29,7 @@ public:
 
   void Solve();
   void UpdatePose();
+  float HuberWeight(const float res);
   void CheckVisiblePointsInPrevFrame(Frame::Ptr currFrame, Sophus::SE3f& transformation);
   void PrecomputeReferencePatterns();
   double ComputeResidualsPatterns(Sophus::SE3f& transformation);
@@ -37,6 +38,8 @@ public:
 private:
   Frame::Ptr currentFrame_;
   KeyFrame::Ptr referenceFrame_;
+
+  float huberK_;
 
   Vector6 x_;
   Vector6 Jres_;
@@ -53,7 +56,11 @@ private:
   std::vector<float> errors_;
   cv::Mat refPatchBuf_;
 
-  Eigen::Matrix<float, 6, Eigen::Dynamic, Eigen::ColMajor> jacobian_buf_;
+  int currentLevel_;
+  bool isSetRefPatch_;
+  size_t nMeasurement_;
+
+  Eigen::Matrix<float, 6, Eigen::Dynamic, Eigen::ColMajor> jacobianBuf_;
 };
 
 
