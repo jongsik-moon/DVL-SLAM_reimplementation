@@ -6,19 +6,64 @@
 Tracker::Tracker(Config &config)
   : config_(config)
 {
-  huberK = 1.345;
+  huberK_ = 1.345;
+  maxIteration = 100;
+  residual_ = 0;
+  eps_ = 0.000001;
+
 }
 
 Tracker::~Tracker(){
 
 }
 
-void Tracker::Solve(){
+bool Tracker::Solve(){
   x_ = H_.ldlt().solve(Jres_);
+  if ( ((x_ - x_).array() == (x_ - x_).array()).all() )
+    return true;
+  return false;
 }
 
-void Tracker::UpdatePose(){
-  prev_Tji_ = curr_Tji_ * Sophus::SE3f::exp(-x_);
+void Tracker::UpdatePose(const Sophus::SE3f& old_Tji, Sophus::SE3f& Tji){
+  Tji = old_Tji * Sophus::SE3f::exp(-x_);
+}
+
+void Tracker::Optimize(Sophus::SE3f& Tji){
+  Sophus::SE3f oldTji = Tji;
+  Matrix6x6 oldH = Matrix6x6::Identity();
+
+  stop_ = false;
+
+  for (int i=0; i<maxIteration; i++){
+    H_.setZero();
+    Jres_.setZero();
+
+    double newResidual = ComputeResidualsPatterns(Tji);
+
+    if(!Solve()){
+      stop_ = true;
+    }
+    if(i > 0 && newResidual > residual_ || stop_){
+      Tji = oldTji;
+      H_ = oldH;
+      break;
+    }
+    Sophus::SE3f newTji;
+    UpdatePose(Tji, newTji);
+    oldTji = Tji;
+    oldH = H_;
+    Tji = newTji;
+
+    residual_ =newResidual;
+    if(NormMax(x_) < eps_){
+      status_ = true;
+
+      if ( ((x_ - x_).array() != (x_ - x_).array()).all() )
+        status_ = false;
+
+      break;
+    }
+  }
 }
 
 float Tracker::HuberWeight(const float res){

@@ -27,13 +27,27 @@ public:
 
   Config& config_;
 
-  void Solve();
-  void UpdatePose();
+  bool Solve();
+  void UpdatePose(const Sophus::SE3f& old_Tji, Sophus::SE3f& Tji);
+  void Optimize(Sophus::SE3f& Tji);
   float HuberWeight(const float res);
   void CheckVisiblePointsInPrevFrame(Frame::Ptr currFrame, Sophus::SE3f& transformation);
   void PrecomputeReferencePatterns();
   double ComputeResidualsPatterns(Sophus::SE3f& transformation);
   Sophus::SE3f trackFrame2Frame(Frame::Ptr currFrame, KeyFrame::Ptr keyFrame);
+
+  inline double NormMax(const Vector6& v)
+  {
+    double max = -1;
+    for (int i=0; i<v.size(); i++)
+    {
+      double abs = fabs(v[i]);
+      if(abs>max){
+        max = abs;
+      }
+    }
+    return max;
+  }
 
 private:
   Frame::Ptr currentFrame_;
@@ -61,6 +75,13 @@ private:
   size_t nMeasurement_;
 
   Eigen::Matrix<float, 6, Eigen::Dynamic, Eigen::ColMajor> jacobianBuf_;
+
+  bool stop_;
+
+  int maxIteration;
+  float residual_;
+  float eps_;
+  bool status_;
 };
 
 
