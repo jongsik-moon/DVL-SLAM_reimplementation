@@ -57,6 +57,8 @@ void System::Run(){
     dTji_ = Tji_ * prevTji.inverse();
     Tij_ = Tji_.inverse();
 
+    std::cout << "[System] Tracking Finished" << std::endl;
+
     Sophus::SE3f Twc = lastKeyFrame->frame->GetTwc();
     currFrame->SetTwc(Twc * Tij_);
 
@@ -66,6 +68,7 @@ void System::Run(){
 
 
     float ratio_threshold = 1.0;
+    std::cout << "[System] Find Keyframe" << std::endl;
 
     KeyFrame::Ptr currentKeyframe(new KeyFrame(config_, currFrame));
 
@@ -74,10 +77,16 @@ void System::Run(){
 
     bool is_keyframe = (visible_ratio1 < ratio_threshold ? true : false) || ((visible_ratio2 < ratio_threshold ? true : false));
 
+    std::cout << "[System] KeyFrame Decision calculated" << std::endl;
+
     if(is_keyframe)
     {
       keyFrameDB_->Add(currentKeyframe);
+      std::cout << "[System] Add KeyFrame" << std::endl;
     }
+    std::cout << "[System] Finished" << std::endl;
+
+    sensor_.publishTransform(Twc * Tij_);
   }
 
 }

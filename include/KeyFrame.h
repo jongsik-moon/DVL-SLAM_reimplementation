@@ -26,7 +26,7 @@ public:
 private:
   Config& config_;
 
-  PinholeModel::Ptr pinholeModel_;
+  PinholeModel pinholeModel_;
 
 };
 

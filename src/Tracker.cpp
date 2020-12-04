@@ -5,13 +5,13 @@
 
 Tracker::Tracker(Config &config)
   : config_(config)
+  , pinholeModel_(config)
 {
   huberK_ = 1.345;
   maxIteration = 100;
   residual_ = 0;
   eps_ = 0.000001;
 
-  pinholeModel_ = std::static_pointer_cast<PinholeModel> (pinholeModel_);
 }
 
 Tracker::~Tracker(){
@@ -67,6 +67,8 @@ void Tracker::Optimize(Sophus::SE3f& Tji){
       break;
     }
   }
+  std::cout << "[Optimize] Iteration Finished" << std::endl;
+
 }
 
 float Tracker::HuberWeight(const float res){
@@ -108,7 +110,7 @@ void Tracker::PrecomputePatches(cv::Mat& img, pcl::PointCloud<pcl::PointXYZRGB>&
   const int stride = img.cols;
   const float scale = 1.0f;
 
-  std::vector<Eigen::Vector2f> uvSet = pinholeModel_->PointCloudXyz2UvVec(pointcloud);
+  std::vector<Eigen::Vector2f> uvSet = pinholeModel_.PointCloudXyz2UvVec(pointcloud);
   patchBuf = cv::Mat(pointcloud.size(), pattern_length_, CV_32F);
 
   if(isDerivative){
@@ -263,6 +265,7 @@ bool Tracker::trackFrame2Frame(Frame::Ptr currFrame, KeyFrame::Ptr refFrame, Sop
   std::cout << "[Tracker] Try to Optimize" << std::endl;
 
   Optimize(transformation);
+  std::cout << "[Tracker] Optimization finished" << std::endl;
 
   return true;
 

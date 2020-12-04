@@ -23,6 +23,7 @@ Sensor::Sensor(Config &config)
   imgSub = nh_.subscribe(imgTopic, 1, &Sensor::ImgCb, this);
   pointCloudSub = nh_.subscribe(pcTopic, 1, &Sensor::PointCloudCb, this);
   imgPub =  it.advertise("/camera/image", 1);
+  transPub = nh_.advertise<geometry_msgs::PoseStamped>("/pose_result", 1);
   input_cloud_ = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
 
   lidarFlag_ = false;
@@ -114,4 +115,28 @@ void Sensor::publishImg(cv::Mat image){
   img_bridge = cv_bridge::CvImage(header, "bgr8", image);
   img_bridge.toImageMsg(img_msg);
   imgPub.publish(img_msg);
+}
+
+void Sensor::publishTransform(Sophus::SE3f input){
+
+  geometry_msgs::PoseStamped msg;
+  msg.pose.position.x = input.translation().x();
+  msg.pose.position.y = input.translation().y();
+  msg.pose.position.z = input.translation().z();
+  msg.pose.orientation.x = input.unit_quaternion().x();
+  msg.pose.orientation.y = input.unit_quaternion().y();
+  msg.pose.orientation.z = input.unit_quaternion().z();
+  msg.pose.orientation.w = input.unit_quaternion().w();
+  msg.header.frame_id = "world";
+
+//  geometry_msgs::Transform msg;
+//  msg.translation.x = input.translation().x();
+//  msg.translation.y = input.translation().y();
+//  msg.translation.y = input.translation().y();
+//  msg.rotation.x = input.unit_quaternion().x();
+//  msg.rotation.x = input.unit_quaternion().y();
+//  msg.rotation.x = input.unit_quaternion().z();
+//  msg.rotation.x = input.unit_quaternion().w();
+
+  transPub.publish(msg);
 }

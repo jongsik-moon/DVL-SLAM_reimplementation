@@ -12,8 +12,6 @@
 
 class PinholeModel{
 public:
-  typedef std::shared_ptr<PinholeModel> Ptr;
-
   PinholeModel(Config &config);
   ~PinholeModel();
 

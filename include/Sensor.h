@@ -8,6 +8,8 @@
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/Image.h>
+#include <geometry_msgs/Transform.h>
+#include <nav_msgs/Odometry.h>
 #include <pcl/point_types.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <opencv2/opencv.hpp>
@@ -27,7 +29,7 @@ public:
   void data2Frame(Frame& frame);
 
   void publishImg(cv::Mat image);
-
+  void publishTransform(Sophus::SE3f input);
 private:
   Config& config_;
 
@@ -35,6 +37,8 @@ private:
 
   ros::Subscriber imgSub;
   ros::Subscriber pointCloudSub;
+
+  ros::Publisher transPub;
 
   image_transport::ImageTransport it = image_transport::ImageTransport(ros::NodeHandle());
   image_transport::Publisher imgPub;

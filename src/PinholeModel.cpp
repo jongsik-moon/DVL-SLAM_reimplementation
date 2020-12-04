@@ -2,6 +2,16 @@
 // Created by jongsik on 20. 12. 4..
 //
 #include "PinholeModel.h"
+PinholeModel::PinholeModel(Config& config)
+  :config_(config)
+{
+
+}
+
+PinholeModel::~PinholeModel()
+{
+
+}
 
 Eigen::Vector2f PinholeModel::PointCloudXyz2Uv(Eigen::Vector3f point){
   float U = config_.fx * (point(0) / point(2)) + config_.cx;

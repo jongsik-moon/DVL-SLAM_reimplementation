@@ -20,6 +20,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   sensor_msgs
   cv_bridge
+  nav_msgs
 )
 
 find_package(yaml-cpp REQUIRED)

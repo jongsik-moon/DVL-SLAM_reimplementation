@@ -5,9 +5,9 @@
 
 KeyFrame::KeyFrame(Config &config, Frame::Ptr frame)
   :config_(config),
-  frame(frame)
+  frame(frame),
+  pinholeModel_(config)
 {
-  pinholeModel_ = std::static_pointer_cast<PinholeModel> (pinholeModel_);
 }
 
 KeyFrame::~KeyFrame()
@@ -17,7 +17,15 @@ KeyFrame::~KeyFrame()
 
 float KeyFrame::GetVisibleRatio (const KeyFrame::Ptr keyframe)
 {
+
+  std::cout << "[KeyFrame] Start GetVisibleRatio" << std::endl;
+
   Sophus::SE3f Tij = frame->GetTwc().inverse() * keyframe->frame->GetTwc();
+
+  std::cout << "[KeyFrame] frame->GetTwc().rotationMatrix()[0, 0] : " << frame->GetTwc().rotationMatrix()(0,0) << std::endl;
+  std::cout << "[KeyFrame] keyframe->frame->GetTwc().translation()[0] : " << keyframe->frame->GetTwc().translation()[0] << std::endl;
+
+  std::cout << "[KeyFrame] Calculated Tij" << std::endl;
 
   int patch_halfsize_ = 2;
   const int border = patch_halfsize_+2;
@@ -32,7 +40,7 @@ float KeyFrame::GetVisibleRatio (const KeyFrame::Ptr keyframe)
     Eigen::Vector3f xyz_cur (iter->x, iter->y, iter->z);
     Eigen::Vector3f xyz_prev = Tij*xyz_cur;
     Eigen::Vector2f uv_prev;
-    uv_prev.noalias() = pinholeModel_->PointCloudXyz2Uv(xyz_prev);
+    uv_prev.noalias() = pinholeModel_.PointCloudXyz2Uv(xyz_prev);
 
     const float u_prev_f = uv_prev(0);
     const float v_prev_f = uv_prev(1);

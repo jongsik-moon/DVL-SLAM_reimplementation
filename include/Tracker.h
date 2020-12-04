@@ -92,7 +92,7 @@ public:
 private:
   Frame::Ptr currentFrame_;
   KeyFrame::Ptr referenceFrame_;
-  PinholeModel::Ptr pinholeModel_;
+  PinholeModel pinholeModel_;
 
   float huberK_;
 
