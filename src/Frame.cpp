@@ -4,16 +4,47 @@
 
 #include <Frame.h>
 
+template<typename T>
+static void pyrDownMeanSmooth(const cv::Mat& in, cv::Mat& out)
+{
+  out.create(cv::Size(in.size().width / 2, in.size().height / 2), in.type());
+
+  // #pragma omp parallel for collapse(2)
+  for(int y = 0; y < out.rows; ++y)
+  {
+    for(int x = 0; x < out.cols; ++x)
+    {
+      int x0 = x * 2;
+      int x1 = x0 + 1;
+      int y0 = y * 2;
+      int y1 = y0 + 1;
+
+      out.at<T>(y, x) = (T) ( (in.at<T>(y0, x0) + in.at<T>(y0, x1) + in.at<T>(y1, x0) + in.at<T>(y1, x1)) / 4.0f );
+    }
+  }
+}
+
+void create_image_pyramid(const cv::Mat& img_level_0, int n_levels, ImgPyramid& pyramid)
+{
+  pyramid.resize(n_levels);
+  pyramid[0] = img_level_0;
+
+  for(int i=1; i<n_levels; ++i)
+  {
+    pyramid[i] = cv::Mat(pyramid[i-1].rows/2, pyramid[i-1].cols/2, CV_32FC1);
+    pyrDownMeanSmooth<float> (pyramid[i-1], pyramid[i]);
+  }
+}
+
 Frame::Frame(Config &config)
   : config_(config)
 {
+
 }
 
 Frame::~Frame(){
 
-
 }
-
 
 cv::Mat& Frame::GetOriginalImg(){ return originalImg_; }
 

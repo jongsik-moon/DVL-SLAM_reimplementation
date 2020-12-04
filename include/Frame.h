@@ -14,6 +14,8 @@
 #include "sophus/se3.hpp"
 #include <mutex>
 
+void create_image_pyramid(const cv::Mat& img_level_0, int n_levels, ImgPyramid& pyr);
+
 class Frame {
 public:
   typedef std::shared_ptr<Frame> Ptr;
@@ -72,6 +74,8 @@ private:
   pcl::PointCloud<pcl::PointXYZRGB> originalCloud_;
 
   Sophus::SE3f Twc_;
+
+  ImgPyramid imgPyramid_;
 
 
 };

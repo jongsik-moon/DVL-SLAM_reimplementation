@@ -12,6 +12,8 @@ Tracker::Tracker(Config &config)
   residual_ = 0;
   eps_ = 0.000001;
 
+  minLevel_ = 1;
+  maxLevel_ = 5;
 }
 
 Tracker::~Tracker(){
@@ -20,6 +22,12 @@ Tracker::~Tracker(){
 
 bool Tracker::Solve(){
   x_ = H_.ldlt().solve(Jres_);
+  std::cout << "[Optimize] x_(0):" << x_(0) << std::endl;
+  std::cout << "[Optimize] x_(1):" << x_(1) << std::endl;
+  std::cout << "[Optimize] x_(2):" << x_(2) << std::endl;
+  std::cout << "[Optimize] x_(3):" << x_(3) << std::endl;
+  std::cout << "[Optimize] x_(4):" << x_(4) << std::endl;
+  std::cout << "[Optimize] x_(5):" << x_(5) << std::endl;
   if ( ((x_ - x_).array() == (x_ - x_).array()).all() )
     return true;
   return false;
@@ -43,8 +51,19 @@ void Tracker::Optimize(Sophus::SE3f& Tji){
 
     double newResidual = ComputeResiduals(Tji);
 
+    for(int i=0; i < errors_.size(); ++i) {
+      float& res = errors_[i];
+      Vector6& J = J_[i];
+      float& weight = weight_[i];
+
+      H_.noalias() += J*J.transpose()*weight;
+      Jres_.noalias() -= J*res*weight;
+    }
+
     if(!Solve()){
       stop_ = true;
+      std::cout << "[Optimize] Stop Sign From Solve" << std::endl;
+
     }
     if(i > 0 && newResidual > residual_ || stop_){
       Tji = oldTji;
@@ -63,6 +82,15 @@ void Tracker::Optimize(Sophus::SE3f& Tji){
 
       if ( ((x_ - x_).array() != (x_ - x_).array()).all() )
         status_ = false;
+
+      std::cout << "[Optimize] break from normmax" << std::endl;
+      std::cout << "[Optimize] x_(0):" << x_(0) << std::endl;
+      std::cout << "[Optimize] x_(1):" << x_(1) << std::endl;
+      std::cout << "[Optimize] x_(2):" << x_(2) << std::endl;
+      std::cout << "[Optimize] x_(3):" << x_(3) << std::endl;
+      std::cout << "[Optimize] x_(4):" << x_(4) << std::endl;
+      std::cout << "[Optimize] x_(5):" << x_(5) << std::endl;
+
 
       break;
     }
@@ -217,6 +245,7 @@ double Tracker::ComputeResiduals(Sophus::SE3f &transformation)
       nMeasurement++;
       Vector6 J(jacobianBuf_.col(i));
       errors_.push_back(res);
+      std::cout << "[ComputeResiduals] res:" << res << std::endl;
       J_.push_back(J);
       IiIj += Ii * Ij;
       IiIi += Ii * Ii;
@@ -259,12 +288,13 @@ bool Tracker::trackFrame2Frame(Frame::Ptr currFrame, KeyFrame::Ptr refFrame, Sop
   affine_a_ = 1.0f;
   affine_b_ = 0.0f;
 
-  isPreComputed_ = false;
-  stop_ = false;
-
   std::cout << "[Tracker] Try to Optimize" << std::endl;
 
-  Optimize(transformation);
+  for(currentLevel_ = maxLevel_; currentLevel_ >= minLevel_; currentLevel_--){
+    isPreComputed_ = false;
+    stop_ = false;
+    Optimize(transformation);
+  }
   std::cout << "[Tracker] Optimization finished" << std::endl;
 
   return true;

@@ -62,11 +62,6 @@ void System::Run(){
     Sophus::SE3f Twc = lastKeyFrame->frame->GetTwc();
     currFrame->SetTwc(Twc * Tij_);
 
-
-    auto vRji = dTji_.log().block<3,1>(3,0).norm();
-    auto vTji = dTji_.log().block<3,1>(0,0).norm();
-
-
     float ratio_threshold = 1.0;
     std::cout << "[System] Find Keyframe" << std::endl;
 

@@ -108,7 +108,8 @@ private:
 
   std::vector<float> errors_;
 
-
+  int minLevel_;
+  int maxLevel_;
   int currentLevel_;
 
   Eigen::Matrix<float, 2, Eigen::Dynamic, Eigen::ColMajor> dIBuf_;
