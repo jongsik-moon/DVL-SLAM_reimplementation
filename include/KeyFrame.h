@@ -7,6 +7,9 @@
 
 #include "Config.h"
 #include "Frame.h"
+#include <thread>
+#include <mutex>
+#include "PinholeModel.h"
 
 class KeyFrame{
 public:
@@ -15,9 +18,73 @@ public:
   KeyFrame(Config &config, Frame::Ptr frame);
   ~KeyFrame();
 
-  Config& config_;
+  float GetVisibleRatio (const KeyFrame::Ptr keyframe);
+
+
   Frame::Ptr frame;
 
+private:
+  Config& config_;
+
+  PinholeModel::Ptr pinholeModel_;
+
+};
+
+class KeyFrameDB {
+public:
+  typedef std::shared_ptr<KeyFrameDB> Ptr;
+
+  KeyFrameDB();
+  ~KeyFrameDB();
+  void Add(KeyFrame::Ptr keyframe) {
+    boost::unique_lock<std::mutex> ulock{mtx_DB};
+    keyframeDB_.push_back(keyframe);
+    ulock.unlock();
+  }
+
+  KeyFrame::Ptr LatestKeyframe() {
+    return *(keyframeDB_.end()-1);
+  }
+
+  void LatestKeyframe(std::vector<KeyFrame::Ptr>& keyframe_window, int n) {
+
+    for(int i = n; i > 0; --i) {
+      keyframe_window.push_back( *(keyframeDB_.end() - i) );
+    }
+
+  }
+
+  void KeyframeSet(std::vector<KeyFrame::Ptr>& keyframe_window, int idx, int n) {
+
+    for(int i = n; i > 0; --i) {
+      keyframe_window.push_back( keyframeDB_[idx-i] );
+    }
+
+  }
+
+  void ConnectedKeyframe(std::vector<KeyFrame::Ptr>& connected_keyframe, int n) {
+
+    for(int i = n; i > 1; --i) {
+      connected_keyframe.push_back( *(keyframeDB_.end() - i) );
+    }
+
+  }
+
+  int size() {
+    return keyframeDB_.size();
+  }
+
+  std::vector< std::list<KeyFrame::Ptr> >& inverted_file() { return inverted_file_; }
+
+  std::vector<KeyFrame::Ptr>::iterator begin() { return keyframeDB_.begin(); }
+  std::vector<KeyFrame::Ptr>::iterator end() { return keyframeDB_.end(); }
+  std::vector<KeyFrame::Ptr>& keyframeDB() { return keyframeDB_; }
+
+  std::mutex mtx_DB;
+
+private:
+  std::vector<KeyFrame::Ptr> keyframeDB_;
+  std::vector<std::list<KeyFrame::Ptr> > inverted_file_;
 };
 
 #endif //DVL_SLAM_MODIFY_KEYFRAME_H

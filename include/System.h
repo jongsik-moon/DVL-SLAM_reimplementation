@@ -32,8 +32,8 @@ private:
   Sophus::SE3f Tji_;
   Sophus::SE3f dTji_;
 
-  std::vector<Frame::Ptr> frameDB_;
-  std::vector<KeyFrame::Ptr> keyFrameDB_;
+  FrameDB::Ptr frameDB_;
+  KeyFrameDB::Ptr keyFrameDB_;
 };
 
 

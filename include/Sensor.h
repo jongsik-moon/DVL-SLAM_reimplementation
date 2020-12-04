@@ -14,6 +14,8 @@
 #include <cv_bridge/cv_bridge.h>
 #include "Frame.h"
 #include <image_transport/image_transport.h>
+#include <pcl/filters/passthrough.h>
+#include <pcl/impl/point_types.hpp>
 
 class Sensor{
 public:
@@ -37,12 +39,15 @@ private:
   image_transport::ImageTransport it = image_transport::ImageTransport(ros::NodeHandle());
   image_transport::Publisher imgPub;
 
-  pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud_;
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr input_cloud_;
   cv::Mat input_img_;
 
 
   bool lidarFlag_;
   bool imgFlag_;
+
+  float minZ;
+  float maxZ;
 
 };
 

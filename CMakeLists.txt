@@ -1,8 +1,14 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(dvl_slam_modify)
 
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 ## Compile as C++11, supported in ROS Kinetic and newer
-# add_compile_options(-std=c++11)
+add_compile_options(-std=c++11)
+
+SET(CMAKE_CXX_FLAGS "-Wall -D_LINUX -D_REENTRANT -march=native -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unknown-pragmas")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mmmx -msse -msse -msse2 -msse3 -mssse3")
 
 LIST( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules )
 
@@ -19,10 +25,12 @@ find_package(catkin REQUIRED COMPONENTS
 find_package(yaml-cpp REQUIRED)
 find_package(OpenCV 3.4 REQUIRED)
 
-find_package(PCL REQUIRED)
+find_package(PCL 1.11 REQUIRED)
+message("[PCL Version] : ${PCL_VERSION}")
+message("[PCL path] : ${PCL_INCLUDE_DIRS}")
 
-find_package(Eigen3 3.3.0 REQUIRED)
-message("{Eigen path} : ${EIGEN3_INCLUDE_DIR}\n")
+find_package(Eigen3 REQUIRED)
+message("{Eigen path} : ${EIGEN3_INCLUDE_DIR}")
 message("[Eigen Version] : ${Eigen3_VERSION}")
 
 find_package(Sophus REQUIRED)
@@ -55,6 +63,7 @@ add_executable(dvl_slam_modify
   src/Sensor.cpp
   src/System.cpp
   src/KeyFrame.cpp
+  src/PinholeModel.cpp
 )
 
 target_link_libraries(dvl_slam_modify

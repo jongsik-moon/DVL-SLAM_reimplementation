@@ -10,6 +10,7 @@
 #include "KeyFrame.h"
 #include <sophus/se3.hpp>
 #include "Datatypes.h"
+#include "PinholeModel.h"
 
 class Tracker{
 
@@ -32,9 +33,9 @@ public:
   void Optimize(Sophus::SE3f& Tji);
   float HuberWeight(const float res);
   void CheckVisiblePointsInPrevFrame(Frame::Ptr currFrame, Sophus::SE3f& transformation);
-  void PrecomputeReferencePatterns();
-  double ComputeResidualsPatterns(Sophus::SE3f& transformation);
-  Sophus::SE3f trackFrame2Frame(Frame::Ptr currFrame, KeyFrame::Ptr keyFrame);
+  void PrecomputePatches(cv::Mat& img, pcl::PointCloud<pcl::PointXYZRGB>& pointcloud, cv::Mat& patch_buf, bool is_derivative);
+  double ComputeResiduals(Sophus::SE3f& transformation);
+  bool trackFrame2Frame(Frame::Ptr currFrame, KeyFrame::Ptr refFrame, Sophus::SE3f& transformation);
 
   inline double NormMax(const Vector6& v)
   {
@@ -49,39 +50,83 @@ public:
     return max;
   }
 
+  inline float compute(cv::Mat& errors)
+  {
+    float initial_sigma_ = 5.0f;
+    float dof_ = 5.0f;
+    float initial_lamda = 1.0f / (initial_sigma_ * initial_sigma_);
+    int num = 0;
+    float lambda = initial_lamda;
+    int iterations = 0;
+    do
+    {
+      ++iterations;
+      initial_lamda = lambda;
+      num = 0.0f;
+      lambda = 0.0f;
+
+      const float* data_ptr = errors.ptr<float>();
+
+      for(size_t idx = 0; idx < errors.size().area(); ++idx, ++data_ptr)
+      {
+        const float& data = *data_ptr;
+
+        if(std::isfinite(data))
+        {
+          ++num;
+          lambda += data * data * ( (dof_ + 1.0f) / (dof_ + initial_lamda * data * data) );
+        }
+      }
+
+      lambda = float(num) / lambda;
+    } while(std::abs(lambda - initial_lamda) > 1e-3);
+
+    return std::sqrt(1.0f / lambda);
+  }
+
+  inline float calcWeight(const float &res)
+  {
+    float dof_ = 5.0f;
+    return (dof_ + 1.0) / (dof_ + res*res);
+  }
 private:
   Frame::Ptr currentFrame_;
   KeyFrame::Ptr referenceFrame_;
+  PinholeModel::Ptr pinholeModel_;
 
   float huberK_;
 
   Vector6 x_;
+  std::vector<Vector6> J_;
   Vector6 Jres_;
   Matrix6x6 H_;
   Matrix6x6 prev_H_;
 
-  Sophus::SE3f prev_Tji_;
-  Sophus::SE3f curr_Tji_;
-
-  std::vector<bool> visiblePoints_;
-  std::vector<bool> visiblePointsInCur_;
-  std::vector<bool> visiblePointsPrev_;
+  std::vector<float> weight_;
+  cv::Mat refPatchBuf_;
+  cv::Mat currPatchBuf_;
 
   std::vector<float> errors_;
-  cv::Mat refPatchBuf_;
+
 
   int currentLevel_;
-  bool isSetRefPatch_;
-  size_t nMeasurement_;
 
+  Eigen::Matrix<float, 2, Eigen::Dynamic, Eigen::ColMajor> dIBuf_;
   Eigen::Matrix<float, 6, Eigen::Dynamic, Eigen::ColMajor> jacobianBuf_;
 
-  bool stop_;
+  float scale_;
 
   int maxIteration;
   float residual_;
   float eps_;
   bool status_;
+
+
+  float affine_a_ = 1;
+  float affine_b_ = 0;
+  bool stop_;
+  bool isPreComputed_;
+
 };
 
 

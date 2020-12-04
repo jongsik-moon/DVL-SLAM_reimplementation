@@ -23,10 +23,13 @@ Sensor::Sensor(Config &config)
   imgSub = nh_.subscribe(imgTopic, 1, &Sensor::ImgCb, this);
   pointCloudSub = nh_.subscribe(pcTopic, 1, &Sensor::PointCloudCb, this);
   imgPub =  it.advertise("/camera/image", 1);
-  input_cloud_ = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
+  input_cloud_ = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
 
   lidarFlag_ = false;
   imgFlag_ = false;
+
+  minZ = 0.15f;
+  maxZ = 50.0f;
 }
 
 Sensor::~Sensor(){
@@ -50,8 +53,8 @@ void Sensor::data2Frame(Frame& frame){
   frame.SetOriginalImg(input_img_);
   if(lidarFlag_) {
 
-    pcl::PointCloud<pcl::PointXYZ>::Ptr transformedCloud = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::PointCloud<pcl::PointXYZ>::Ptr rectifiedCloud = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr transformedCloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr rectifiedCloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
 
     Eigen::Matrix4f transform = Eigen::Matrix4f::Identity();
 
@@ -92,6 +95,13 @@ void Sensor::data2Frame(Frame& frame){
     transformRect (2,3) = 0;
 
     pcl::transformPointCloud (*transformedCloud, *rectifiedCloud, transformRect);
+
+    pcl::PassThrough<pcl::PointXYZRGB> pass;
+    pass.setInputCloud(rectifiedCloud);
+    pass.setFilterFieldName("z");
+    pass.setFilterLimits(minZ, maxZ);
+    pass.filter(*rectifiedCloud);
+
     frame.SetOriginalCloud(*rectifiedCloud);
   }
 }

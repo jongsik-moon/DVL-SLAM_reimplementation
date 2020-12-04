@@ -5,7 +5,8 @@
 #ifndef DVL_SLAM_MODIFY_DATATYPES_H
 #define DVL_SLAM_MODIFY_DATATYPES_H
 
-#include <Eigen/Core>
+#include <eigen3/Eigen/Core>
+#include <opencv2/opencv.hpp>
 
 typedef float NumType;
 

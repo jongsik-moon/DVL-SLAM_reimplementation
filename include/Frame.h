@@ -6,10 +6,13 @@
 #define DVL_SLAM_MODIFY_FRAME_H
 #include <opencv2/opencv.hpp>
 #include <pcl/point_cloud.h>
+#include <pcl/impl/point_types.hpp>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl_ros/transforms.h>
 #include "Config.h"
 #include "Datatypes.h"
+#include "sophus/se3.hpp"
+#include <mutex>
 
 class Frame {
 public:
@@ -29,10 +32,15 @@ public:
   cv::Mat& GetOriginalImg();
   void SetOriginalImg(cv::Mat originalImg);
 
-  pcl::PointCloud<pcl::PointXYZ>& GetOriginalCloud();
-  void SetOriginalCloud(pcl::PointCloud<pcl::PointXYZ> originalCloud);
+  pcl::PointCloud<pcl::PointXYZRGB>& GetOriginalCloud();
+  void SetOriginalCloud(pcl::PointCloud<pcl::PointXYZRGB> originalCloud);
+
+  Sophus::SE3f GetTwc();
+  void SetTwc(Sophus::SE3f Twc);
 
   Eigen::Vector2f PointCloudXyz2Uv(Eigen::Vector3f point);
+  std::vector<Eigen::Vector2f> PointCloudXyz2UvVec(const pcl::PointCloud<pcl::PointXYZRGB>& pc);
+
   cv::Mat pointCloudProjection();
 
   inline static void jacobian_xyz2uv(const Eigen::Vector3f& xyzFloat, Matrix2x6& J)
@@ -61,9 +69,35 @@ private:
   Config &config_;
 
   cv::Mat originalImg_;
-  pcl::PointCloud<pcl::PointXYZ> originalCloud_;
+  pcl::PointCloud<pcl::PointXYZRGB> originalCloud_;
+
+  Sophus::SE3f Twc_;
+
 
 };
 
+
+class FrameDB
+{
+public:
+  typedef std::shared_ptr<FrameDB> Ptr;
+
+  FrameDB() {}
+  ~FrameDB() {}
+
+  void Add(Frame::Ptr frame) {
+    boost::unique_lock<std::mutex> ul{DB_mutex_};
+    frameDB_.push_back(frame);
+    ul.unlock();
+  }
+
+  std::vector<Frame::Ptr>::iterator begin() { return frameDB_.begin(); }
+  std::vector<Frame::Ptr>::iterator end() { return frameDB_.end(); }
+  size_t size() { return frameDB_.size(); }
+  std::vector<Frame::Ptr>& frameDB() { return frameDB_; }
+private:
+  std::vector<Frame::Ptr> frameDB_;
+  std::mutex DB_mutex_;
+};
 
 #endif //DVL_SLAM_MODIFY_FRAME_H
