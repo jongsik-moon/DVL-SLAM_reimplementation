@@ -6,7 +6,7 @@
 #define DVL_SLAM_MODIFY_FRAME_H
 #include <opencv2/opencv.hpp>
 #include <pcl/point_cloud.h>
-#include <pcl/impl/point_types.hpp>
+#include <pcl/point_types.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl_ros/transforms.h>
 #include "Config.h"

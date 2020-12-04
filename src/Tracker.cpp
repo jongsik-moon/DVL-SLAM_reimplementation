@@ -36,6 +36,8 @@ void Tracker::Optimize(Sophus::SE3f& Tji){
   stop_ = false;
 
   for (int i=0; i<maxIteration; i++){
+    std::cout << "[Optimize] Iteration : " << i << std::endl;
+
     H_.setZero();
     Jres_.setZero();
 
@@ -257,6 +259,8 @@ bool Tracker::trackFrame2Frame(Frame::Ptr currFrame, KeyFrame::Ptr refFrame, Sop
 
   isPreComputed_ = false;
   stop_ = false;
+
+  std::cout << "[Tracker] Try to Optimize" << std::endl;
 
   Optimize(transformation);
 

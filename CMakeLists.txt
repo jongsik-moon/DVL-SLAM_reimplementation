@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-add_compile_options(-std=c++11)
+#add_compile_options(-std=c++11)
 
 SET(CMAKE_CXX_FLAGS "-Wall -D_LINUX -D_REENTRANT -march=native -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unknown-pragmas")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mmmx -msse -msse -msse2 -msse3 -mssse3")
@@ -25,7 +25,7 @@ find_package(catkin REQUIRED COMPONENTS
 find_package(yaml-cpp REQUIRED)
 find_package(OpenCV 3.4 REQUIRED)
 
-find_package(PCL 1.11 REQUIRED)
+find_package(PCL REQUIRED)
 message("[PCL Version] : ${PCL_VERSION}")
 message("[PCL path] : ${PCL_INCLUDE_DIRS}")
 
@@ -70,6 +70,7 @@ target_link_libraries(dvl_slam_modify
   ${catkin_LIBRARIES}
   yaml-cpp
   ${DBoW2_LIBS}
+  ${PCL_LIBRARIES}
   ${DLib_LIBS}
   ${CHOLMOD_LIBRARIES}
   ${G2O_STUFF_LIBRARY}

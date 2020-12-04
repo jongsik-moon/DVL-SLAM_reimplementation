@@ -23,7 +23,7 @@ Sensor::Sensor(Config &config)
   imgSub = nh_.subscribe(imgTopic, 1, &Sensor::ImgCb, this);
   pointCloudSub = nh_.subscribe(pcTopic, 1, &Sensor::PointCloudCb, this);
   imgPub =  it.advertise("/camera/image", 1);
-  input_cloud_ = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
+  input_cloud_ = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
 
   lidarFlag_ = false;
   imgFlag_ = false;

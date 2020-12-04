@@ -34,8 +34,8 @@ class KeyFrameDB {
 public:
   typedef std::shared_ptr<KeyFrameDB> Ptr;
 
-  KeyFrameDB();
-  ~KeyFrameDB();
+  KeyFrameDB(){}
+  ~KeyFrameDB(){}
   void Add(KeyFrame::Ptr keyframe) {
     boost::unique_lock<std::mutex> ulock{mtx_DB};
     keyframeDB_.push_back(keyframe);

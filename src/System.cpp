@@ -25,6 +25,8 @@ void System::Run(){
   sensor_.data2Frame(*currFrame);
   sensor_.publishImg(currFrame->pointCloudProjection());
 
+  std::cout << "[System] frame class got data from sensor class" << std::endl;
+
   if(!initialized_){
     Eigen::Matrix3f rot;
     rot << 1.0, 0.0, 0.0,
@@ -40,10 +42,13 @@ void System::Run(){
     keyFrameDB_->Add(keyFrame);
 
     initialized_ = true;
-
+    std::cout << "[System] Initialized" << std::endl;
     return;
   }
   else{
+
+    std::cout << "[System] Find KeyFrame from KeyFrame DB" << std::endl;
+
     KeyFrame::Ptr lastKeyFrame = keyFrameDB_->LatestKeyframe();
 
     Sophus::SE3f prevTji = Tji_;

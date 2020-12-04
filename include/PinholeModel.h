@@ -8,7 +8,8 @@
 #include "Config.h"
 #include "Datatypes.h"
 #include <pcl/point_cloud.h>
-#include <pcl/impl/point_types.hpp>
+#include <pcl/point_types.h>
+
 class PinholeModel{
 public:
   typedef std::shared_ptr<PinholeModel> Ptr;

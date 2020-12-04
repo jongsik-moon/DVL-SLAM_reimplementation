@@ -15,7 +15,7 @@
 #include "Frame.h"
 #include <image_transport/image_transport.h>
 #include <pcl/filters/passthrough.h>
-#include <pcl/impl/point_types.hpp>
+#include <pcl/point_types.h>
 
 class Sensor{
 public:
