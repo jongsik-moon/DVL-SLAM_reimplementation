@@ -29,10 +29,11 @@ float KeyFrame::GetVisibleRatio (const KeyFrame::Ptr keyframe)
 
   int patch_halfsize_ = 2;
   const int border = patch_halfsize_+2;
-  int current_level = 0;
+  int currentLevel = 0;
 
-  cv::Mat& current_img = frame->GetOriginalImg();
+  cv::Mat& current_img = frame->GetPyramidImg(currentLevel);
 
+  const float scale = 1.0f / (1 << currentLevel);
 
   int visible_points = 0;
 
@@ -40,7 +41,7 @@ float KeyFrame::GetVisibleRatio (const KeyFrame::Ptr keyframe)
     Eigen::Vector3f xyz_cur (iter->x, iter->y, iter->z);
     Eigen::Vector3f xyz_prev = Tij*xyz_cur;
     Eigen::Vector2f uv_prev;
-    uv_prev.noalias() = pinholeModel_.PointCloudXyz2Uv(xyz_prev);
+    uv_prev.noalias() = pinholeModel_.PointCloudXyz2Uv(xyz_prev) * scale;
 
     const float u_prev_f = uv_prev(0);
     const float v_prev_f = uv_prev(1);

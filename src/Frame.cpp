@@ -4,51 +4,56 @@
 
 #include <Frame.h>
 
-template<typename T>
-static void pyrDownMeanSmooth(const cv::Mat& in, cv::Mat& out)
+Frame::Frame(Config &config)
+  : config_(config)
 {
-  out.create(cv::Size(in.size().width / 2, in.size().height / 2), in.type());
+  numLevel_ = 2;
+}
 
+Frame::~Frame(){
+  imgPyramid_.clear();
+}
+
+void Frame::pyrDownMeanSmooth(const cv::Mat& in, cv::Mat& out)
+{
   // #pragma omp parallel for collapse(2)
   for(int y = 0; y < out.rows; ++y)
   {
     for(int x = 0; x < out.cols; ++x)
     {
+
       int x0 = x * 2;
       int x1 = x0 + 1;
       int y0 = y * 2;
       int y1 = y0 + 1;
 
-      out.at<T>(y, x) = (T) ( (in.at<T>(y0, x0) + in.at<T>(y0, x1) + in.at<T>(y1, x0) + in.at<T>(y1, x1)) / 4.0f );
+      out.at<uint16_t>(y, x) = (uint16_t) ( (in.at<uint16_t>(y0, x0) + in.at<uint16_t>(y0, x1) + in.at<uint16_t>(y1, x0) + in.at<uint16_t>(y1, x1)) / 4.0f );
     }
   }
 }
 
-void create_image_pyramid(const cv::Mat& img_level_0, int n_levels, ImgPyramid& pyramid)
+void Frame::createImagePyramid()
 {
-  pyramid.resize(n_levels);
-  pyramid[0] = img_level_0;
+  imgPyramid_.resize(numLevel_);
+  imgPyramid_[0] = gray_;
 
-  for(int i=1; i<n_levels; ++i)
+  for(int i=1; i<numLevel_; ++i)
   {
-    pyramid[i] = cv::Mat(pyramid[i-1].rows/2, pyramid[i-1].cols/2, CV_32FC1);
-    pyrDownMeanSmooth<float> (pyramid[i-1], pyramid[i]);
+    imgPyramid_[i] = cv::Mat(imgPyramid_[i-1].rows/2, imgPyramid_[i-1].cols/2, CV_32FC1);
+    pyrDownMeanSmooth(imgPyramid_[i-1], imgPyramid_[i]);
   }
 }
 
-Frame::Frame(Config &config)
-  : config_(config)
-{
+cv::Mat& Frame::GetPyramidImg(size_t level){ return imgPyramid_[level]; }
 
+void Frame::SetOriginalImg(cv::Mat originalImg){
+  this->originalImg_ = originalImg;
+
+  cvtColor(originalImg, gray_, cv::COLOR_BGR2GRAY);
+  gray_.convertTo(gray_, CV_32FC1);
+
+  createImagePyramid();
 }
-
-Frame::~Frame(){
-
-}
-
-cv::Mat& Frame::GetOriginalImg(){ return originalImg_; }
-
-void Frame::SetOriginalImg(cv::Mat originalImg){ this->originalImg_ = originalImg; }
 
 pcl::PointCloud<pcl::PointXYZRGB>& Frame::GetOriginalCloud(){ return originalCloud_; }
 
@@ -60,6 +65,7 @@ void Frame::SetTwc(Sophus::SE3f Twc){ this->Twc_ = Twc; }
 
 cv::Mat Frame::pointCloudProjection()
 {
+
   cv::Mat projectedImg = originalImg_.clone();
 
   for(int i=0; i<originalCloud_.points.size(); i++)

@@ -16,7 +16,7 @@ public:
   ~PinholeModel();
 
   Eigen::Vector2f PointCloudXyz2Uv(Eigen::Vector3f point);
-  std::vector<Eigen::Vector2f> PointCloudXyz2UvVec(const pcl::PointCloud<pcl::PointXYZRGB>& pc);
+  std::vector<Eigen::Vector2f> PointCloudXyz2UvVec(const pcl::PointCloud<pcl::PointXYZRGB>& pc, float scale);
 
 private:
   Config &config_;

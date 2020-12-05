@@ -30,7 +30,7 @@ find_package(PCL REQUIRED)
 message("[PCL Version] : ${PCL_VERSION}")
 message("[PCL path] : ${PCL_INCLUDE_DIRS}")
 
-find_package(Eigen3 REQUIRED)
+find_package(Eigen3 3.3 REQUIRED)
 message("{Eigen path} : ${EIGEN3_INCLUDE_DIR}")
 message("[Eigen Version] : ${Eigen3_VERSION}")
 

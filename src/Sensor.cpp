@@ -53,9 +53,9 @@ void Sensor::PointCloudCb(const sensor_msgs::PointCloud2ConstPtr& input){
 void Sensor::data2Frame(Frame& frame){
   frame.SetOriginalImg(input_img_);
   if(lidarFlag_) {
-
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr transformedCloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr rectifiedCloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
+
 
     Eigen::Matrix4f transform = Eigen::Matrix4f::Identity();
 
@@ -103,8 +103,10 @@ void Sensor::data2Frame(Frame& frame){
     pass.setFilterLimits(minZ, maxZ);
     pass.filter(*rectifiedCloud);
 
+
     frame.SetOriginalCloud(*rectifiedCloud);
   }
+
 }
 
 void Sensor::publishImg(cv::Mat image){
@@ -112,7 +114,7 @@ void Sensor::publishImg(cv::Mat image){
   sensor_msgs::Image img_msg;
   std_msgs::Header header;
   header.stamp = ros::Time::now();
-  img_bridge = cv_bridge::CvImage(header, "bgr8", image);
+  img_bridge = cv_bridge::CvImage(header, "mono16", image);
   img_bridge.toImageMsg(img_msg);
   imgPub.publish(img_msg);
 }
@@ -140,3 +142,7 @@ void Sensor::publishTransform(Sophus::SE3f input){
 
   transPub.publish(msg);
 }
+
+bool Sensor::IsLidarSubscribed(){ return lidarFlag_; }
+
+bool Sensor::IsVisionSubscribed(){ return imgFlag_; }

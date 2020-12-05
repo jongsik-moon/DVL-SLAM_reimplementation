@@ -12,8 +12,8 @@ Tracker::Tracker(Config &config)
   residual_ = 0;
   eps_ = 0.000001;
 
-  minLevel_ = 1;
-  maxLevel_ = 5;
+  minLevel_ = 0;
+  maxLevel_ = 1;
 }
 
 Tracker::~Tracker(){
@@ -50,6 +50,7 @@ void Tracker::Optimize(Sophus::SE3f& Tji){
     Jres_.setZero();
 
     double newResidual = ComputeResiduals(Tji);
+    std::cout << "[Optimize] newResidual:" << newResidual << std::endl;
 
     for(int i=0; i < errors_.size(); ++i) {
       float& res = errors_[i];
@@ -136,9 +137,9 @@ float Tracker::HuberWeight(const float res){
 void Tracker::PrecomputePatches(cv::Mat& img, pcl::PointCloud<pcl::PointXYZRGB>& pointcloud, cv::Mat& patchBuf, bool isDerivative){
   const int border = patch_halfsize_ + 4;
   const int stride = img.cols;
-  const float scale = 1.0f;
+  const float scale = 1.0f/(1<<currentLevel_);
 
-  std::vector<Eigen::Vector2f> uvSet = pinholeModel_.PointCloudXyz2UvVec(pointcloud);
+  std::vector<Eigen::Vector2f> uvSet = pinholeModel_.PointCloudXyz2UvVec(pointcloud, scale);
   patchBuf = cv::Mat(pointcloud.size(), pattern_length_, CV_32F);
 
   if(isDerivative){
@@ -173,7 +174,7 @@ void Tracker::PrecomputePatches(cv::Mat& img, pcl::PointCloud<pcl::PointXYZRGB>&
     const float wBR = subpixURef * subpixVRef;
 
     size_t pixelCounter = 0;
-    float* patchBufPtr = reinterpret_cast<float *> (refPatchBuf_.data) + patch_area_ * pointCounter;
+    float* patchBufPtr = reinterpret_cast<float *> (patchBuf.data) + pattern_length_ * pointCounter;
 
     for (int i=0; i<pattern_length_; ++i, ++pixelCounter, ++patchBufPtr){
      int x = pattern_[i][0];
@@ -207,12 +208,12 @@ double Tracker::ComputeResiduals(Sophus::SE3f &transformation)
 
   if (!isPreComputed_)
   {
-    cv::Mat &referenceImg = referenceFrame_->frame->GetOriginalImg();
+    cv::Mat &referenceImg = referenceFrame_->frame->GetPyramidImg(currentLevel_);
     pcl::PointCloud<pcl::PointXYZRGB> &referencePointCloud = referenceFrame_->frame->GetOriginalCloud();
     PrecomputePatches(referenceImg, referencePointCloud, refPatchBuf_, true);
     isPreComputed_ = true;
   }
-  cv::Mat &currImg = currentFrame_->GetOriginalImg();
+  cv::Mat &currImg = currentFrame_->GetPyramidImg(currentLevel_);
   pcl::PointCloud<pcl::PointXYZRGB> currPointCloud;
   pcl::transformPointCloud(referenceFrame_->frame->GetOriginalCloud(), currPointCloud, transformation.matrix());
 
@@ -220,6 +221,10 @@ double Tracker::ComputeResiduals(Sophus::SE3f &transformation)
 
   cv::Mat errors = cv::Mat(currPointCloud.size(), pattern_length_, CV_32F);
   errors = currPatchBuf_ - refPatchBuf_;
+//  std::cout << "[Tracker] errors.size() : "<< errors.size() << std::endl;
+//  std::cout << "[Tracker] errors.at<float>(0,0) : "<< errors.at<float>(0,0) << std::endl;
+//  std::cout << "[Tracker] errors : "<< errors << std::endl;
+
 
   scale_ = compute(errors);
 
@@ -240,44 +245,48 @@ double Tracker::ComputeResiduals(Sophus::SE3f &transformation)
     float &res = *errorsPtr;
     float &Ii = *refPatchBufPtr;
     float &Ij = *currPatchBufPtr;
+
     if (std::isfinite(res))
     {
       nMeasurement++;
       Vector6 J(jacobianBuf_.col(i));
       errors_.push_back(res);
-      std::cout << "[ComputeResiduals] res:" << res << std::endl;
       J_.push_back(J);
       IiIj += Ii * Ij;
       IiIi += Ii * Ii;
       sumIi += Ii;
       sumIj += Ij;
     }
-    affine_a_ = IiIj / IiIi;
-    affine_b_ = (sumIj - affine_a_ * sumIi) / nMeasurement;
-
-    std::vector<float> sortedErrors;
-    sortedErrors.resize(errors_.size());
-    std::copy(errors_.begin(), errors_.end(), sortedErrors.begin());
-    std::sort(sortedErrors.begin(), sortedErrors.end());
-
-    float medianMu = sortedErrors[sortedErrors.size() / 2];
-    std::vector<float> absoluteResError;
-    for (auto error:errors_)
-    {
-      absoluteResError.push_back(fabs(error - medianMu));
-    }
-    sort(absoluteResError.begin(), absoluteResError.end());
-    float medianAbsDeviation = 1.4826 * absoluteResError[absoluteResError.size() / 2];
-
-    for (auto error:errors_)
-    {
-      float weight = 1.0;
-      weight = calcWeight((error - medianMu) / medianAbsDeviation);
-      weight_.push_back(weight);
-      chi2 += error * error * weight;
-    }
-    return chi2 / nMeasurement;
   }
+  affine_a_ = IiIj / IiIi;
+  affine_b_ = (sumIj - affine_a_ * sumIi) / nMeasurement;
+
+  std::vector<float> sortedErrors;
+  sortedErrors.resize(errors_.size());
+  std::copy(errors_.begin(), errors_.end(), sortedErrors.begin());
+  std::sort(sortedErrors.begin(), sortedErrors.end());
+
+  float medianMu = sortedErrors[sortedErrors.size() / 2];
+  std::vector<float> absoluteResError;
+  for (auto error:errors_)
+  {
+    absoluteResError.push_back(fabs(error - medianMu));
+  }
+  sort(absoluteResError.begin(), absoluteResError.end());
+  float medianAbsDeviation = 1.4826 * absoluteResError[absoluteResError.size() / 2];
+
+  for (auto error:errors_)
+  {
+    float weight = 1.0;
+    weight = calcWeight((error - medianMu) / medianAbsDeviation);
+    weight_.push_back(weight);
+    chi2 += error * error * weight;
+    std::cout << "[Tracker] chi2 : "<< chi2 << std::endl;
+    std::cout << "[Tracker] weight : "<< weight << std::endl;
+
+  }
+
+  return chi2 / nMeasurement;
 }
 
 bool Tracker::trackFrame2Frame(Frame::Ptr currFrame, KeyFrame::Ptr refFrame, Sophus::SE3f& transformation)

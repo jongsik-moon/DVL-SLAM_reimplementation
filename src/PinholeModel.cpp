@@ -20,13 +20,13 @@ Eigen::Vector2f PinholeModel::PointCloudXyz2Uv(Eigen::Vector3f point){
   return uv;
 }
 
-std::vector<Eigen::Vector2f> PinholeModel::PointCloudXyz2UvVec(const pcl::PointCloud<pcl::PointXYZRGB>& pc){
+std::vector<Eigen::Vector2f> PinholeModel::PointCloudXyz2UvVec(const pcl::PointCloud<pcl::PointXYZRGB>& pc, float scale){
   std::vector<Eigen::Vector2f> uvSet;
   for(auto point:pc){
     float U = config_.fx * (point.x / point.z) + config_.cx;
     float V = config_.fy * (point.y / point.z) + config_.cy;
     Eigen::Vector2f uv(U, V);
-    uvSet.push_back(uv);
+    uvSet.push_back(uv*scale);
     return uvSet;
   }
 }

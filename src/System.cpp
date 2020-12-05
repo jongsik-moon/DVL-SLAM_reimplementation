@@ -22,8 +22,12 @@ System::~System(){
 
 void System::Run(){
   Frame::Ptr currFrame (new Frame(config_));
+  if(!sensor_.IsLidarSubscribed() || !sensor_.IsVisionSubscribed()){
+    std::cout << "[System] No sensor data subscribed" << std::endl;
+    return;
+  }
   sensor_.data2Frame(*currFrame);
-  sensor_.publishImg(currFrame->pointCloudProjection());
+//  sensor_.publishImg(currFrame->GetPyramidImg(1));
 
   std::cout << "[System] frame class got data from sensor class" << std::endl;
 

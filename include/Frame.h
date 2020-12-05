@@ -14,7 +14,7 @@
 #include "sophus/se3.hpp"
 #include <mutex>
 
-void create_image_pyramid(const cv::Mat& img_level_0, int n_levels, ImgPyramid& pyr);
+void createImagePyramid(const cv::Mat& img_level_0, int n_levels, ImgPyramid& pyr);
 
 class Frame {
 public:
@@ -31,7 +31,7 @@ public:
   void showImg(cv::Mat& img);
   void saveImg(cv::Mat& img);
 
-  cv::Mat& GetOriginalImg();
+  cv::Mat& GetPyramidImg(size_t level);
   void SetOriginalImg(cv::Mat originalImg);
 
   pcl::PointCloud<pcl::PointXYZRGB>& GetOriginalCloud();
@@ -44,6 +44,9 @@ public:
   std::vector<Eigen::Vector2f> PointCloudXyz2UvVec(const pcl::PointCloud<pcl::PointXYZRGB>& pc);
 
   cv::Mat pointCloudProjection();
+
+  void createImagePyramid();
+  void pyrDownMeanSmooth(const cv::Mat& in, cv::Mat& out);
 
   inline static void jacobian_xyz2uv(const Eigen::Vector3f& xyzFloat, Matrix2x6& J)
   {
@@ -71,13 +74,14 @@ private:
   Config &config_;
 
   cv::Mat originalImg_;
+  cv::Mat gray_;
   pcl::PointCloud<pcl::PointXYZRGB> originalCloud_;
 
   Sophus::SE3f Twc_;
 
   ImgPyramid imgPyramid_;
 
-
+  int numLevel_;
 };
 
 

@@ -30,6 +30,9 @@ public:
 
   void publishImg(cv::Mat image);
   void publishTransform(Sophus::SE3f input);
+
+  bool IsLidarSubscribed();
+  bool IsVisionSubscribed();
 private:
   Config& config_;
 
