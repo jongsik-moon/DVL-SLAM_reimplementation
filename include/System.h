@@ -10,6 +10,8 @@
 #include "GraphOptimizer.h"
 #include "KeyFrame.h"
 #include "Sensor.h"
+#include "SensorRos.h"
+#include "SensorSavedData.h"
 #include "Tracker.h"
 #include <sophus/se3.hpp>
 
@@ -23,7 +25,7 @@ public:
 private:
   Config& config_;
   GraphOptimizer graphOptimizer_;
-  Sensor sensor_;
+  Sensor* sensor_;
   Tracker tracker_;
 
   bool initialized_;

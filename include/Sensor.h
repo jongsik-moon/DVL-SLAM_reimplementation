@@ -21,21 +21,30 @@
 
 class Sensor{
 public:
-  Sensor(Config &config);
+  Sensor(Config& config);
   ~Sensor();
 
-  void ImgCb(const sensor_msgs::ImageConstPtr& img);
-  void PointCloudCb(const sensor_msgs::PointCloud2ConstPtr& input);
-  void data2Frame(Frame& frame);
+  virtual void data2Frame(Frame& frame) = 0;
 
   void publishImg(cv::Mat image);
   void publishTransform(Sophus::SE3f input);
 
   bool IsLidarSubscribed();
   bool IsVisionSubscribed();
-private:
+
+protected:
   Config& config_;
 
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr inputCloud_;
+  cv::Mat inputImg_;
+
+  bool lidarFlag_;
+  bool imgFlag_;
+
+  float minZ;
+  float maxZ;
+
+private:
   ros::NodeHandle nh_;
 
   ros::Subscriber imgSub;
@@ -45,17 +54,6 @@ private:
 
   image_transport::ImageTransport it = image_transport::ImageTransport(ros::NodeHandle());
   image_transport::Publisher imgPub;
-
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr input_cloud_;
-  cv::Mat input_img_;
-
-
-  bool lidarFlag_;
-  bool imgFlag_;
-
-  float minZ;
-  float maxZ;
-
 };
 
 #endif //DVL_SLAM_MODIFY_SENSOR_H

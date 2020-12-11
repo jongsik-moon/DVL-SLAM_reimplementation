@@ -265,6 +265,7 @@ double Tracker::ComputeResiduals(Sophus::SE3f &transformation)
   sortedErrors.resize(errors_.size());
   std::copy(errors_.begin(), errors_.end(), sortedErrors.begin());
   std::sort(sortedErrors.begin(), sortedErrors.end());
+  std::cout << "[Tracker] sortedErrors.size() : " << sortedErrors.size() << std::endl;
 
   float medianMu = sortedErrors[sortedErrors.size() / 2];
   std::vector<float> absoluteResError;
@@ -281,8 +282,7 @@ double Tracker::ComputeResiduals(Sophus::SE3f &transformation)
     weight = calcWeight((error - medianMu) / medianAbsDeviation);
     weight_.push_back(weight);
     chi2 += error * error * weight;
-    std::cout << "[Tracker] chi2 : "<< chi2 << std::endl;
-    std::cout << "[Tracker] weight : "<< weight << std::endl;
+
 
   }
 

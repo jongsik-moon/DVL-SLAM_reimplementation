@@ -10,6 +10,7 @@ struct Dataset
 {
   bool isKitti;
   bool isIndoor;
+  bool useRos;
 };
 
 struct Camera
@@ -62,6 +63,7 @@ public:
 
   bool isKitti;
   bool isIndoor;
+  bool useRos;
 
   float fx;
   float fy;

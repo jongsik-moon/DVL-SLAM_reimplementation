@@ -1,6 +1,7 @@
 Dataset:
   isKitti: true
   isIndoor: false
+  useRos: true
 
 Camera:
   fx: 707.0912

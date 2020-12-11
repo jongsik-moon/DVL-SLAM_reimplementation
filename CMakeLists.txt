@@ -65,6 +65,8 @@ add_executable(dvl_slam_modify
   src/System.cpp
   src/KeyFrame.cpp
   src/PinholeModel.cpp
+  src/SensorRos.cpp
+  src/SensorSavedData.cpp
 )
 
 target_link_libraries(dvl_slam_modify

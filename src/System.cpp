@@ -6,14 +6,16 @@
 
 System::System(Config& config)
   : config_(config),
-    graphOptimizer_(config_),
-    sensor_(config_),
-    tracker_(config_)
+    graphOptimizer_(config),
+    tracker_(config)
 {
   initialized_ = false;
 
   keyFrameDB_.reset(new KeyFrameDB());
   frameDB_.reset(new FrameDB());
+
+  if(config_.useRos) { sensor_ = new SensorRos(config); }
+  else { sensor_ = new SensorSavedData(config); }
 }
 
 System::~System(){
@@ -22,12 +24,12 @@ System::~System(){
 
 void System::Run(){
   Frame::Ptr currFrame (new Frame(config_));
-  if(!sensor_.IsLidarSubscribed() || !sensor_.IsVisionSubscribed()){
+  if(!sensor_->IsLidarSubscribed() || !sensor_->IsVisionSubscribed()){
     std::cout << "[System] No sensor data subscribed" << std::endl;
     return;
   }
-  sensor_.data2Frame(*currFrame);
-//  sensor_.publishImg(currFrame->GetPyramidImg(1));
+  sensor_->data2Frame(*currFrame);
+  sensor_->publishImg(currFrame->GetPyramidImg(1));
 
   std::cout << "[System] frame class got data from sensor class" << std::endl;
 
@@ -85,7 +87,7 @@ void System::Run(){
     }
     std::cout << "[System] Finished" << std::endl;
 
-    sensor_.publishTransform(Twc * Tij_);
+//    sensor_->publishTransform(Twc * Tij_);
   }
 
 }
