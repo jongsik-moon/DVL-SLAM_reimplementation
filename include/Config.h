@@ -11,6 +11,9 @@ struct Dataset
   bool isKitti;
   bool isIndoor;
   bool useRos;
+  std::string imgDir;
+  std::string lidarDir;
+  bool visualize;
 };
 
 struct Camera
@@ -64,6 +67,9 @@ public:
   bool isKitti;
   bool isIndoor;
   bool useRos;
+  std::string imgDir;
+  std::string lidarDir;
+  bool visualize;
 
   float fx;
   float fy;

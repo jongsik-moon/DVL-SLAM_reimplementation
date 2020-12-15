@@ -47,9 +47,6 @@ protected:
 private:
   ros::NodeHandle nh_;
 
-  ros::Subscriber imgSub;
-  ros::Subscriber pointCloudSub;
-
   ros::Publisher transPub;
 
   image_transport::ImageTransport it = image_transport::ImageTransport(ros::NodeHandle());

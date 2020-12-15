@@ -6,6 +6,8 @@
 #define DVL_SLAM_MODIFY_SENSORSAVEDDATA_H
 
 #include "Sensor.h"
+#include "glob.h"
+#include "boost/filesystem.hpp"
 
 class SensorSavedData : public Sensor{
 public:
@@ -19,8 +21,8 @@ public:
 
 private:
   Config& config_;
-  std::vector<cv::Mat> imgVec;
-  std::vector<pcl::PointCloud<pcl::PointXYZ>> cloudVec;
+  std::queue<cv::Mat> imgVec;
+  std::queue<pcl::PointCloud<pcl::PointXYZRGB>> cloudVec;
 };
 
 #endif //DVL_SLAM_MODIFY_SENSORSAVEDDATA_H

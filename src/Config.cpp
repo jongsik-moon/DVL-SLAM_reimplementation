@@ -29,6 +29,9 @@ void Config::ReadEveryParameter(const YAML::Node yamlFile)
   isKitti = datasetYaml["isKitti"].as<bool>();
   isIndoor = datasetYaml["isIndoor"].as<bool>();
   useRos = datasetYaml["useRos"].as<bool>();
+  imgDir = datasetYaml["imgDir"].as<std::string>();
+  lidarDir = datasetYaml["lidarDir"].as<std::string>();
+  visualize = datasetYaml["visualize"].as<bool>();
 
   fx = cameraYaml["fx"].as<float>();
   fy = cameraYaml["fy"].as<float>();

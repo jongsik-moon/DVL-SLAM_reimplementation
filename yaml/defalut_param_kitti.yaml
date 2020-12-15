@@ -1,7 +1,10 @@
 Dataset:
   isKitti: true
   isIndoor: false
-  useRos: true
+  useRos: false
+  imgDir: "/home/jongsik/temp_work/kitti2bag/2011_09_30/2011_09_30_drive_0020_sync/image_00/data_temp/"
+  lidarDir: "/home/jongsik/temp_work/kitti2bag/2011_09_30/2011_09_30_drive_0020_sync/velodyne_points/data_temp/"
+  visualize: true
 
 Camera:
   fx: 707.0912

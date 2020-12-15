@@ -15,8 +15,19 @@ int main(int argc, char** argv){
   Config Config;
   System System(Config);
 
-  while(ros::ok()){
-    System.Run();
-    ros::spinOnce();
+  if(Config.useRos){
+    while(ros::ok()){
+      System.Run();
+      ros::spinOnce();
+    }
+}
+  else{
+    while(true){
+      char ch;
+      std::cin.get(ch);
+      if(ch == '\n'){
+        System.Run();
+      }
+    }
   }
 }

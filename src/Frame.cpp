@@ -39,7 +39,7 @@ void Frame::createImagePyramid()
 
   for(int i=1; i<numLevel_; ++i)
   {
-    imgPyramid_[i] = cv::Mat(imgPyramid_[i-1].rows/2, imgPyramid_[i-1].cols/2, CV_32FC1);
+    imgPyramid_[i] = cv::Mat(imgPyramid_[i-1].rows/2, imgPyramid_[i-1].cols/2, CV_16UC1);
     pyrDownMeanSmooth(imgPyramid_[i-1], imgPyramid_[i]);
   }
 }
@@ -50,7 +50,7 @@ void Frame::SetOriginalImg(cv::Mat originalImg){
   this->originalImg_ = originalImg;
 
   cvtColor(originalImg, gray_, cv::COLOR_BGR2GRAY);
-  gray_.convertTo(gray_, CV_32FC1);
+  gray_.convertTo(gray_, CV_16UC1);
 
   createImagePyramid();
 }

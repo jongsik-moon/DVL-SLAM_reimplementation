@@ -16,7 +16,7 @@ Sensor::Sensor(Config& config)
   imgPub =  it.advertise("/camera/image", 1);
   transPub = nh_.advertise<geometry_msgs::PoseStamped>("/pose_result", 1);
 
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr inputCloud_ = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
+  inputCloud_ = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
 }
 
 Sensor::~Sensor(){
@@ -27,7 +27,7 @@ void Sensor::publishImg(cv::Mat image){
   sensor_msgs::Image img_msg;
   std_msgs::Header header;
   header.stamp = ros::Time::now();
-  img_bridge = cv_bridge::CvImage(header, "mono16", image);
+  img_bridge = cv_bridge::CvImage(header, "bgr8", image);
   img_bridge.toImageMsg(img_msg);
   imgPub.publish(img_msg);
 }
