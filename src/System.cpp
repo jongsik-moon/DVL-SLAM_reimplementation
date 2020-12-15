@@ -29,7 +29,11 @@ void System::Run(){
     return;
   }
   sensor_->data2Frame(*currFrame);
-  sensor_->publishImg(currFrame->pointCloudProjection());
+  if(config_.visualize){
+    sensor_->publishImg(currFrame->pointCloudProjection());
+    cv::imshow("visualize", currFrame->pointCloudProjection());
+    char ch = cv::waitKey(10);
+  }
 
   std::cout << "[System] frame class got data from sensor class" << std::endl;
 
