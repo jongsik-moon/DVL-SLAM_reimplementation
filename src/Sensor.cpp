@@ -27,7 +27,7 @@ void Sensor::publishImg(cv::Mat image){
   sensor_msgs::Image img_msg;
   std_msgs::Header header;
   header.stamp = ros::Time::now();
-  img_bridge = cv_bridge::CvImage(header, "bgr8", image);
+  img_bridge = cv_bridge::CvImage(header, "mono16", image);
   img_bridge.toImageMsg(img_msg);
   imgPub.publish(img_msg);
 }

@@ -33,9 +33,9 @@ public:
   void Optimize(Sophus::SE3f& Tji);
   float HuberWeight(const float res);
   void CheckVisiblePointsInPrevFrame(Frame::Ptr currFrame, Sophus::SE3f& transformation);
-  void PrecomputePatches(cv::Mat& img, pcl::PointCloud<pcl::PointXYZRGB>& pointcloud, cv::Mat& patch_buf, bool is_derivative);
+  cv::Mat PrecomputePatches(cv::Mat& img, pcl::PointCloud<pcl::PointXYZRGB>& pointcloud, cv::Mat& patch_buf, bool is_derivative);
   double ComputeResiduals(Sophus::SE3f& transformation);
-  bool trackFrame2Frame(Frame::Ptr currFrame, KeyFrame::Ptr refFrame, Sophus::SE3f& transformation);
+  void trackFrame2Frame(Frame::Ptr currFrame, KeyFrame::Ptr refFrame, Sophus::SE3f& transformation);
 
   inline double NormMax(const Vector6& v)
   {
@@ -128,6 +128,8 @@ private:
   bool stop_;
   bool isPreComputed_;
 
+  cv::Mat refImgClone;
+  cv::Mat currImgClone;
 };
 
 

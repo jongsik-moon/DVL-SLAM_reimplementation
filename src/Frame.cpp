@@ -13,21 +13,18 @@ Frame::Frame(Config &config)
 Frame::~Frame(){
   imgPyramid_.clear();
 }
-
+template<typename T>
 void Frame::pyrDownMeanSmooth(const cv::Mat& in, cv::Mat& out)
 {
-  // #pragma omp parallel for collapse(2)
   for(int y = 0; y < out.rows; ++y)
   {
     for(int x = 0; x < out.cols; ++x)
     {
-
       int x0 = x * 2;
       int x1 = x0 + 1;
       int y0 = y * 2;
       int y1 = y0 + 1;
-
-      out.at<uint16_t>(y, x) = (uint16_t) ( (in.at<uint16_t>(y0, x0) + in.at<uint16_t>(y0, x1) + in.at<uint16_t>(y1, x0) + in.at<uint16_t>(y1, x1)) / 4.0f );
+      out.at<T>(y, x) = (T) ( (in.at<T>(y0, x0) + in.at<T>(y0, x1) + in.at<T>(y1, x0) + in.at<T>(y1, x1)) / 4.0f );
     }
   }
 }
@@ -39,8 +36,8 @@ void Frame::createImagePyramid()
 
   for(int i=1; i<numLevel_; ++i)
   {
-    imgPyramid_[i] = cv::Mat(imgPyramid_[i-1].rows/2, imgPyramid_[i-1].cols/2, CV_16UC1);
-    pyrDownMeanSmooth(imgPyramid_[i-1], imgPyramid_[i]);
+    imgPyramid_[i] = cv::Mat(imgPyramid_[i-1].rows/2, imgPyramid_[i-1].cols/2, CV_32FC1);
+    pyrDownMeanSmooth<float>(imgPyramid_[i-1], imgPyramid_[i]);
   }
 }
 
@@ -49,8 +46,9 @@ cv::Mat& Frame::GetPyramidImg(size_t level){ return imgPyramid_[level]; }
 void Frame::SetOriginalImg(cv::Mat originalImg){
   this->originalImg_ = originalImg;
 
+  originalImg_.convertTo(originalImg_, CV_32FC3, 1.0/255);
   cvtColor(originalImg, gray_, cv::COLOR_BGR2GRAY);
-  gray_.convertTo(gray_, CV_16UC1);
+  gray_.convertTo(gray_, CV_32FC1, 1.0/255);
 
   createImagePyramid();
 }

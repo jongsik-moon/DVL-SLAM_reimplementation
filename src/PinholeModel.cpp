@@ -27,6 +27,6 @@ std::vector<Eigen::Vector2f> PinholeModel::PointCloudXyz2UvVec(const pcl::PointC
     float V = config_.fy * (point.y / point.z) + config_.cy;
     Eigen::Vector2f uv(U, V);
     uvSet.push_back(uv*scale);
-    return uvSet;
   }
+  return uvSet;
 }

@@ -29,11 +29,6 @@ void System::Run(){
     return;
   }
   sensor_->data2Frame(*currFrame);
-  if(config_.visualize){
-    sensor_->publishImg(currFrame->pointCloudProjection());
-    cv::imshow("visualize", currFrame->pointCloudProjection());
-    char ch = cv::waitKey(10);
-  }
 
   std::cout << "[System] frame class got data from sensor class" << std::endl;
 
@@ -44,6 +39,7 @@ void System::Run(){
            0.0, 0.0, 1.0;
     Eigen::Vector3f twc(0, 0, 0);
 
+
     Sophus::SE3f initialTwc(rot, twc);
     currFrame->SetTwc(initialTwc);
 
@@ -52,44 +48,51 @@ void System::Run(){
     keyFrameDB_->Add(keyFrame);
 
     initialized_ = true;
+
     std::cout << "[System] Initialized" << std::endl;
     return;
   }
   else{
 
-//    std::cout << "[System] Find KeyFrame from KeyFrame DB" << std::endl;
-//
-//    KeyFrame::Ptr lastKeyFrame = keyFrameDB_->LatestKeyframe();
-//
-//    Sophus::SE3f prevTji = Tji_;
-//    tracker_.trackFrame2Frame(currFrame, lastKeyFrame, Tji_);
-//
-//    dTji_ = Tji_ * prevTji.inverse();
-//    Tij_ = Tji_.inverse();
-//
-//    std::cout << "[System] Tracking Finished" << std::endl;
-//
-//    Sophus::SE3f Twc = lastKeyFrame->frame->GetTwc();
-//    currFrame->SetTwc(Twc * Tij_);
-//
-//    float ratio_threshold = 1.0;
-//    std::cout << "[System] Find Keyframe" << std::endl;
-//
-//    KeyFrame::Ptr currentKeyframe(new KeyFrame(config_, currFrame));
-//
-//    float visible_ratio1 = lastKeyFrame->GetVisibleRatio(currentKeyframe);
-//    float visible_ratio2 = currentKeyframe->GetVisibleRatio(lastKeyFrame);
-//
-//    bool is_keyframe = (visible_ratio1 < ratio_threshold ? true : false) || ((visible_ratio2 < ratio_threshold ? true : false));
-//
-//    std::cout << "[System] KeyFrame Decision calculated" << std::endl;
-//
-//    if(is_keyframe)
-//    {
-//      keyFrameDB_->Add(currentKeyframe);
-//      std::cout << "[System] Add KeyFrame" << std::endl;
-//    }
-//    std::cout << "[System] Finished" << std::endl;
+    std::cout << "[System] Find KeyFrame from KeyFrame DB" << std::endl;
+
+    KeyFrame::Ptr lastKeyFrame = keyFrameDB_->LatestKeyframe();
+
+    Sophus::SE3f prevTji = Tji_;
+    Tji_ = Tji_ * dTji_;
+    tracker_.trackFrame2Frame(currFrame, lastKeyFrame, Tji_);
+
+    dTji_ = Tji_ * prevTji.inverse();
+    Tij_ = Tji_.inverse();
+
+    std::cout << "[System] Tracking Finished" << std::endl;
+
+    Sophus::SE3f Twc = lastKeyFrame->frame->GetTwc();
+    Sophus::SE3f T = Twc * Tij_;
+
+    std::cout << "[System] T = " std::endl;
+    std::cout << T.matrix() << std::endl;
+
+    currFrame->SetTwc(Twc * Tij_);
+
+    float ratio_threshold = 1.0;
+    std::cout << "[System] Find Keyframe" << std::endl;
+
+    KeyFrame::Ptr currentKeyframe(new KeyFrame(config_, currFrame));
+
+    float visible_ratio1 = lastKeyFrame->GetVisibleRatio(currentKeyframe);
+    float visible_ratio2 = currentKeyframe->GetVisibleRatio(lastKeyFrame);
+
+    bool is_keyframe = (visible_ratio1 < ratio_threshold ? true : false) || ((visible_ratio2 < ratio_threshold ? true : false));
+
+    std::cout << "[System] KeyFrame Decision calculated" << std::endl;
+
+    if(is_keyframe)
+    {
+      keyFrameDB_->Add(currentKeyframe);
+      std::cout << "[System] Add KeyFrame" << std::endl;
+    }
+    std::cout << "[System] Finished" << std::endl;
 
 //    sensor_->publishTransform(Twc * Tij_);
   }

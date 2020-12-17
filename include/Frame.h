@@ -46,6 +46,8 @@ public:
   cv::Mat pointCloudProjection();
 
   void createImagePyramid();
+
+  template<typename T>
   void pyrDownMeanSmooth(const cv::Mat& in, cv::Mat& out);
 
   inline static void jacobian_xyz2uv(const Eigen::Vector3f& xyzFloat, Matrix2x6& J)

@@ -10,7 +10,7 @@ Tracker::Tracker(Config &config)
   huberK_ = 1.345;
   maxIteration = 100;
   residual_ = 0;
-  eps_ = 0.000001;
+  eps_ = 0.0005;
 
   minLevel_ = 0;
   maxLevel_ = 1;
@@ -22,12 +22,11 @@ Tracker::~Tracker(){
 
 bool Tracker::Solve(){
   x_ = H_.ldlt().solve(Jres_);
-  std::cout << "[Optimize] x_(0):" << x_(0) << std::endl;
-  std::cout << "[Optimize] x_(1):" << x_(1) << std::endl;
-  std::cout << "[Optimize] x_(2):" << x_(2) << std::endl;
-  std::cout << "[Optimize] x_(3):" << x_(3) << std::endl;
-  std::cout << "[Optimize] x_(4):" << x_(4) << std::endl;
-  std::cout << "[Optimize] x_(5):" << x_(5) << std::endl;
+  std::cout << "[Optimize] Jres_ = " << Jres_ << std::endl;
+  std::cout << "[Optimize] H_ = " << H_ << std::endl;
+  std::cout << "[Optimize] x_ = " << x_ << std::endl;
+
+
   if ( ((x_ - x_).array() == (x_ - x_).array()).all() )
     return true;
   return false;
@@ -35,6 +34,10 @@ bool Tracker::Solve(){
 
 void Tracker::UpdatePose(const Sophus::SE3f& old_Tji, Sophus::SE3f& Tji){
   Tji = old_Tji * Sophus::SE3f::exp(-x_);
+  std::cout << "[Tracker] old_Tji = " << old_Tji.matrix() << std::endl;
+  std::cout << "[Tracker] Sophus::SE3f::exp(-x_) = " << Sophus::SE3f::exp(-x_).matrix() << std::endl;
+  std::cout << "[Tracker] Tji = " << Tji.matrix() << std::endl;
+
 }
 
 void Tracker::Optimize(Sophus::SE3f& Tji){
@@ -42,7 +45,6 @@ void Tracker::Optimize(Sophus::SE3f& Tji){
   Matrix6x6 oldH = Matrix6x6::Identity();
 
   stop_ = false;
-
   for (int i=0; i<maxIteration; i++){
     std::cout << "[Optimize] Iteration : " << i << std::endl;
 
@@ -52,13 +54,16 @@ void Tracker::Optimize(Sophus::SE3f& Tji){
     double newResidual = ComputeResiduals(Tji);
     std::cout << "[Optimize] newResidual:" << newResidual << std::endl;
 
-    for(int i=0; i < errors_.size(); ++i) {
-      float& res = errors_[i];
-      Vector6& J = J_[i];
-      float& weight = weight_[i];
+    for(int j=0; j < errors_.size(); ++j) {
+      float& res = errors_[j];
+      Vector6& J = J_[j];
+//      float& weight = weight_[j];
+      float weight = 1;
 
       H_.noalias() += J*J.transpose()*weight;
       Jres_.noalias() -= J*res*weight;
+//      std::cout << "[Optimize] J : " << J << std::endl;
+
     }
 
     if(!Solve()){
@@ -66,11 +71,12 @@ void Tracker::Optimize(Sophus::SE3f& Tji){
       std::cout << "[Optimize] Stop Sign From Solve" << std::endl;
 
     }
-    if(i > 0 && newResidual > residual_ || stop_){
-      Tji = oldTji;
-      H_ = oldH;
-      break;
-    }
+//    if(i > 0 && newResidual > residual_ || stop_){
+//      Tji = oldTji;
+//      H_ = oldH;
+//      std::cout << "[Optimize] Stop Sign From Res" << std::endl;
+//      break;
+//    }
     Sophus::SE3f newTji;
     UpdatePose(Tji, newTji);
     oldTji = Tji;
@@ -78,20 +84,14 @@ void Tracker::Optimize(Sophus::SE3f& Tji){
     Tji = newTji;
 
     residual_ = newResidual;
+    std::cout << "[Optimize] NormMax(x_) = " << NormMax(x_) << std::endl;
+
     if(NormMax(x_) < eps_){
       status_ = true;
 
       if ( ((x_ - x_).array() != (x_ - x_).array()).all() )
         status_ = false;
-
       std::cout << "[Optimize] break from normmax" << std::endl;
-      std::cout << "[Optimize] x_(0):" << x_(0) << std::endl;
-      std::cout << "[Optimize] x_(1):" << x_(1) << std::endl;
-      std::cout << "[Optimize] x_(2):" << x_(2) << std::endl;
-      std::cout << "[Optimize] x_(3):" << x_(3) << std::endl;
-      std::cout << "[Optimize] x_(4):" << x_(4) << std::endl;
-      std::cout << "[Optimize] x_(5):" << x_(5) << std::endl;
-
 
       break;
     }
@@ -134,16 +134,14 @@ float Tracker::HuberWeight(const float res){
 //  }
 //}
 
-void Tracker::PrecomputePatches(cv::Mat& img, pcl::PointCloud<pcl::PointXYZRGB>& pointcloud, cv::Mat& patchBuf, bool isDerivative){
+cv::Mat Tracker::PrecomputePatches(cv::Mat& img, pcl::PointCloud<pcl::PointXYZRGB>& pointcloud, cv::Mat& patchBuf, bool isDerivative){
   const int border = patch_halfsize_ + 4;
   const int stride = img.cols;
   const float scale = 1.0f/(1<<currentLevel_);
 
   std::vector<Eigen::Vector2f> uvSet = pinholeModel_.PointCloudXyz2UvVec(pointcloud, scale);
   patchBuf = cv::Mat(pointcloud.size(), pattern_length_, CV_32F);
-
   if(isDerivative){
-    dIBuf_.resize(Eigen::NoChange, patchBuf.rows * pattern_length_);
     jacobianBuf_.resize(Eigen::NoChange, patchBuf.rows * pattern_length_);
     jacobianBuf_.setZero();
   }
@@ -151,7 +149,20 @@ void Tracker::PrecomputePatches(cv::Mat& img, pcl::PointCloud<pcl::PointXYZRGB>&
   auto pointCloudIter = pointcloud.begin();
   size_t pointCounter = 0;
 
+  int pointNum = pointcloud.points.size();
+  cv::Mat imgClone = cv::Mat(img.rows, img.cols, CV_32FC3, cv::Scalar(0));
+
+//  cv::cvtColor(imgClone, imgClone, cv::COLOR_GRAY2BGR);
+//  for(int i=0; i<img.rows; i++){
+//    for(int j=0; j<img.cols; j++){
+//      std::cout << "[Optimize] imgClone.at<float>(uInt, vInt)0 = " << imgClone.at<float>(i, j) << std::endl;
+//      std::cout << "[Optimize] img.at<float>(uInt, vInt)0 = " << img.at<float>(i, j) << std::endl;
+//    }
+//  }
+
+  float temp;
   for(auto uvIter=uvSet.begin(); uvIter!=uvSet.end(); ++uvIter, ++pointCloudIter, ++pointCounter){
+    temp = 0;
     Eigen::Vector2f uv = *uvIter;
 
     const float uFloat = uv(0);
@@ -159,7 +170,7 @@ void Tracker::PrecomputePatches(cv::Mat& img, pcl::PointCloud<pcl::PointXYZRGB>&
     const int uInt = static_cast<int> (uFloat);
     const int vInt = static_cast<int> (vFloat);
 
-    if(uInt - border < 0 || uInt + border > img.cols || vInt - border < 0 || vInt + border > img.cols){
+    if(uInt - border < 0 || uInt + border > img.cols || vInt - border < 0 || vInt + border > img.rows || pointCloudIter->z <= 0.0){
       float* patchBufPtr = reinterpret_cast<float *> (patchBuf.data) + pattern_length_ * pointCounter;
       for(int i=0; i<pattern_length_; ++i, ++patchBufPtr)
         *patchBufPtr = std::numeric_limits<float>::quiet_NaN();
@@ -177,27 +188,34 @@ void Tracker::PrecomputePatches(cv::Mat& img, pcl::PointCloud<pcl::PointXYZRGB>&
     float* patchBufPtr = reinterpret_cast<float *> (patchBuf.data) + pattern_length_ * pointCounter;
 
     for (int i=0; i<pattern_length_; ++i, ++pixelCounter, ++patchBufPtr){
-     int x = pattern_[i][0];
-     int y = pattern_[i][1];
+      int x = pattern_[i][0];
+      int y = pattern_[i][1];
 
-     float* imgPtr = (float*) img.data + (vInt + y) * stride + (uInt + x);
-     *patchBufPtr = wTL * imgPtr[0] + wTR * imgPtr[1] + wBL * imgPtr[stride] + wBR * imgPtr[stride + 1];
-
+      float* imgPtr = (float*) img.data + (vInt + y) * stride + (uInt + x);
+      *patchBufPtr = wTL * imgPtr[0] + wTR * imgPtr[1] + wBL * imgPtr[stride] + wBR * imgPtr[stride + 1];
+      temp += *patchBufPtr;
      if(isDerivative){
        float dx = 0.5f * ((wTL*imgPtr[1] + wTR*imgPtr[2] + wBL*imgPtr[stride+1] + wBR*imgPtr[stride+2])
                           -(wTL*imgPtr[-1] + wTR*imgPtr[0] + wBL*imgPtr[stride-1] + wBR*imgPtr[stride]));
        float dy = 0.5f * ((wTL*imgPtr[stride] + wTR*imgPtr[1+stride] + wBL*imgPtr[stride*2] + wBR*imgPtr[stride*2+1])
                           -(wTL*imgPtr[-stride] + wTR*imgPtr[1-stride] + wBL*imgPtr[0] + wBR*imgPtr[1]));
+
        Matrix2x6 frameJacobian;
        Eigen::Vector3f xyz(pointCloudIter->x, pointCloudIter->y, pointCloudIter->z);
        Frame::jacobian_xyz2uv(xyz, frameJacobian);
 
-       Eigen::Vector2f dIxy(dx, dy);
-       dIBuf_.col(pointCounter*pattern_length_ + i) = dIxy;
-       jacobianBuf_.col(pointCounter*pattern_length_ + pixelCounter) = (dx*config_.fx * frameJacobian.row(0) + dy*config_.fy*frameJacobian.row(1));
+       jacobianBuf_.col(pointCounter*pattern_length_ + pixelCounter) = (dx*config_.fx * frameJacobian.row(0) + dy*config_.fy*frameJacobian.row(1)) / (1 << currentLevel_);
      }
     }
+    temp /= pattern_length_;
+    cv::Scalar_<float> color = cv::Scalar_<float>(temp, temp, temp);
+    cv::circle(imgClone, cv::Point(uInt, vInt), 2, color, 1);
   }
+  std::cout << "[Tracker] patchBuf.rows = " << patchBuf.rows << std::endl;
+  std::cout << "[Tracker] pointcloud.size() = " << pointcloud.size() << std::endl;
+  std::cout << "[Tracker] jacobianBuf_.size() = " << jacobianBuf_.size() << std::endl;
+
+  return imgClone;
 }
 
 double Tracker::ComputeResiduals(Sophus::SE3f &transformation)
@@ -210,21 +228,37 @@ double Tracker::ComputeResiduals(Sophus::SE3f &transformation)
   {
     cv::Mat &referenceImg = referenceFrame_->frame->GetPyramidImg(currentLevel_);
     pcl::PointCloud<pcl::PointXYZRGB> &referencePointCloud = referenceFrame_->frame->GetOriginalCloud();
-    PrecomputePatches(referenceImg, referencePointCloud, refPatchBuf_, true);
+    refImgClone = PrecomputePatches(referenceImg, referencePointCloud, refPatchBuf_, true);
     isPreComputed_ = true;
   }
   cv::Mat &currImg = currentFrame_->GetPyramidImg(currentLevel_);
   pcl::PointCloud<pcl::PointXYZRGB> currPointCloud;
   pcl::transformPointCloud(referenceFrame_->frame->GetOriginalCloud(), currPointCloud, transformation.matrix());
-
-  PrecomputePatches(currImg, currPointCloud, currPatchBuf_, false);
-
+  currImgClone = PrecomputePatches(currImg, currPointCloud, currPatchBuf_, false);
   cv::Mat errors = cv::Mat(currPointCloud.size(), pattern_length_, CV_32F);
   errors = currPatchBuf_ - refPatchBuf_;
-//  std::cout << "[Tracker] errors.size() : "<< errors.size() << std::endl;
-//  std::cout << "[Tracker] errors.at<float>(0,0) : "<< errors.at<float>(0,0) << std::endl;
-//  std::cout << "[Tracker] errors : "<< errors << std::endl;
 
+  if(config_.visualize){
+    cv::Mat diff = currImgClone - refImgClone;
+    cv::Mat temp1, temp2, temp3;
+    temp1 = refImgClone.clone();
+    temp2 = currImgClone.clone();
+    temp3 = diff.clone();
+    temp1.convertTo(temp1, CV_8U, 255);
+    temp2.convertTo(temp2, CV_8U, 255);
+    temp3.convertTo(temp3, CV_8U, 255);
+    cv::imshow("refImgClone", temp1);
+    cv::imshow("currImgClone", temp2);
+    cv::imshow("diff", diff);
+    cv::moveWindow("refImgClone", 40, 30);
+    cv::moveWindow("currImgClone", 40, 500);
+    cv::moveWindow("diff", 40, 900);
+
+    while(1){
+      int key = cv::waitKey(0);
+      if(key == 27) break;
+    }
+  }
 
   scale_ = compute(errors);
 
@@ -246,6 +280,11 @@ double Tracker::ComputeResiduals(Sophus::SE3f &transformation)
     float &Ii = *refPatchBufPtr;
     float &Ij = *currPatchBufPtr;
 
+//    std::cout << "[Tracker] i = " << i << std::endl;
+//    std::cout << "[Tracker] res = " << res << std::endl;
+//    std::cout << "[Tracker] Ii = " << Ii << std::endl;
+//    std::cout << "[Tracker] Ij = " << Ij << std::endl;
+
     if (std::isfinite(res))
     {
       nMeasurement++;
@@ -258,6 +297,7 @@ double Tracker::ComputeResiduals(Sophus::SE3f &transformation)
       sumIj += Ij;
     }
   }
+
   affine_a_ = IiIj / IiIi;
   affine_b_ = (sumIj - affine_a_ * sumIi) / nMeasurement;
 
@@ -265,7 +305,6 @@ double Tracker::ComputeResiduals(Sophus::SE3f &transformation)
   sortedErrors.resize(errors_.size());
   std::copy(errors_.begin(), errors_.end(), sortedErrors.begin());
   std::sort(sortedErrors.begin(), sortedErrors.end());
-  std::cout << "[Tracker] sortedErrors.size() : " << sortedErrors.size() << std::endl;
 
   float medianMu = sortedErrors[sortedErrors.size() / 2];
   std::vector<float> absoluteResError;
@@ -275,21 +314,20 @@ double Tracker::ComputeResiduals(Sophus::SE3f &transformation)
   }
   sort(absoluteResError.begin(), absoluteResError.end());
   float medianAbsDeviation = 1.4826 * absoluteResError[absoluteResError.size() / 2];
-
   for (auto error:errors_)
   {
     float weight = 1.0;
-    weight = calcWeight((error - medianMu) / medianAbsDeviation);
+//    weight = calcWeight((error - medianMu) / medianAbsDeviation);
     weight_.push_back(weight);
     chi2 += error * error * weight;
-
-
+//    std::cout << "[Tracker] weight = " << weight << std::endl;
+//    std::cout << "[Tracker] error = " << error << std::endl;
   }
 
   return chi2 / nMeasurement;
 }
 
-bool Tracker::trackFrame2Frame(Frame::Ptr currFrame, KeyFrame::Ptr refFrame, Sophus::SE3f& transformation)
+void Tracker::trackFrame2Frame(Frame::Ptr currFrame, KeyFrame::Ptr refFrame, Sophus::SE3f& transformation)
 {
   currentFrame_ = currFrame;
   referenceFrame_ = refFrame;
@@ -306,6 +344,14 @@ bool Tracker::trackFrame2Frame(Frame::Ptr currFrame, KeyFrame::Ptr refFrame, Sop
   }
   std::cout << "[Tracker] Optimization finished" << std::endl;
 
-  return true;
-
 }
+//if(config_.visualize){
+//cv::Mat temp1, temp2;
+//temp1 = refPatchBuf_.clone();
+//temp1.convertTo(temp1, CV_8UC1);
+//cv::imshow("refPatchBuf_", temp1);
+//cv::waitKey(3000);
+//
+////      sensor_->publishImg(keyFrame->frame->GetPyramidImg(1));
+//
+//}

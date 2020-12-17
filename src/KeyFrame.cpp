@@ -22,11 +22,6 @@ float KeyFrame::GetVisibleRatio (const KeyFrame::Ptr keyframe)
 
   Sophus::SE3f Tij = frame->GetTwc().inverse() * keyframe->frame->GetTwc();
 
-  std::cout << "[KeyFrame] frame->GetTwc().rotationMatrix()[0, 0] : " << frame->GetTwc().rotationMatrix()(0,0) << std::endl;
-  std::cout << "[KeyFrame] keyframe->frame->GetTwc().translation()[0] : " << keyframe->frame->GetTwc().translation()[0] << std::endl;
-
-  std::cout << "[KeyFrame] Calculated Tij" << std::endl;
-
   int patch_halfsize_ = 2;
   const int border = patch_halfsize_+2;
   int currentLevel = 0;

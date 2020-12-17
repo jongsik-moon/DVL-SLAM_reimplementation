@@ -37,9 +37,7 @@ public:
   KeyFrameDB(){}
   ~KeyFrameDB(){}
   void Add(KeyFrame::Ptr keyframe) {
-    boost::unique_lock<std::mutex> ulock{mtx_DB};
     keyframeDB_.push_back(keyframe);
-    ulock.unlock();
   }
 
   KeyFrame::Ptr LatestKeyframe() {
@@ -74,17 +72,12 @@ public:
     return keyframeDB_.size();
   }
 
-  std::vector< std::list<KeyFrame::Ptr> >& inverted_file() { return inverted_file_; }
-
   std::vector<KeyFrame::Ptr>::iterator begin() { return keyframeDB_.begin(); }
   std::vector<KeyFrame::Ptr>::iterator end() { return keyframeDB_.end(); }
   std::vector<KeyFrame::Ptr>& keyframeDB() { return keyframeDB_; }
 
-  std::mutex mtx_DB;
-
 private:
   std::vector<KeyFrame::Ptr> keyframeDB_;
-  std::vector<std::list<KeyFrame::Ptr> > inverted_file_;
 };
 
 #endif //DVL_SLAM_MODIFY_KEYFRAME_H
