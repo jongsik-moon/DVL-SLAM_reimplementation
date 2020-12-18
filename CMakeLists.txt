@@ -67,6 +67,7 @@ add_executable(dvl_slam_modify
   src/PinholeModel.cpp
   src/SensorRos.cpp
   src/SensorSavedData.cpp
+  src/Logger.cpp
 )
 
 target_link_libraries(dvl_slam_modify

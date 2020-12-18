@@ -70,7 +70,7 @@ void System::Run(){
     Sophus::SE3f Twc = lastKeyFrame->frame->GetTwc();
     Sophus::SE3f T = Twc * Tij_;
 
-    std::cout << "[System] T = " std::endl;
+    std::cout << "[System] T = " << std::endl;
     std::cout << T.matrix() << std::endl;
 
     currFrame->SetTwc(Twc * Tij_);
@@ -92,6 +92,17 @@ void System::Run(){
       keyFrameDB_->Add(currentKeyframe);
       std::cout << "[System] Add KeyFrame" << std::endl;
     }
+
+    pcl::PointXYZ odometryLogger;
+    odometryLogger.x = T.translation()[0];
+    odometryLogger.y = T.translation()[1];
+    odometryLogger.z = T.translation()[2];
+
+    logger_.PushBackOdometryResult(odometryLogger);
+    logger_.PushBackMapResult(lastKeyFrame->frame->GetOriginalCloud(), T);
+    logger_.PublishOdometryPoint();
+    logger_.PublishMapPointCloud();
+
     std::cout << "[System] Finished" << std::endl;
 
 //    sensor_->publishTransform(Twc * Tij_);

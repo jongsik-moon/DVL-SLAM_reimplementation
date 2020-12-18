@@ -23,11 +23,12 @@ int main(int argc, char** argv){
 }
   else{
     while(true){
-      char ch;
-      std::cin.get(ch);
-      if(ch == '\n'){
-        System.Run();
-      }
+//      char ch;
+//      std::cin.get(ch);
+//      if(ch == '\n'){
+//        System.Run();
+//      }
+      System.Run();
     }
   }
 }

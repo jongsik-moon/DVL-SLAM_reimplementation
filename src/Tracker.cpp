@@ -22,9 +22,9 @@ Tracker::~Tracker(){
 
 bool Tracker::Solve(){
   x_ = H_.ldlt().solve(Jres_);
-  std::cout << "[Optimize] Jres_ = " << Jres_ << std::endl;
-  std::cout << "[Optimize] H_ = " << H_ << std::endl;
-  std::cout << "[Optimize] x_ = " << x_ << std::endl;
+//  std::cout << "[Optimize] Jres_ = " << Jres_ << std::endl;
+//  std::cout << "[Optimize] H_ = " << H_ << std::endl;
+//  std::cout << "[Optimize] x_ = " << x_ << std::endl;
 
 
   if ( ((x_ - x_).array() == (x_ - x_).array()).all() )
@@ -34,10 +34,9 @@ bool Tracker::Solve(){
 
 void Tracker::UpdatePose(const Sophus::SE3f& old_Tji, Sophus::SE3f& Tji){
   Tji = old_Tji * Sophus::SE3f::exp(-x_);
-  std::cout << "[Tracker] old_Tji = " << old_Tji.matrix() << std::endl;
-  std::cout << "[Tracker] Sophus::SE3f::exp(-x_) = " << Sophus::SE3f::exp(-x_).matrix() << std::endl;
-  std::cout << "[Tracker] Tji = " << Tji.matrix() << std::endl;
-
+//  std::cout << "[Tracker] old_Tji = " << old_Tji.matrix() << std::endl;
+//  std::cout << "[Tracker] Sophus::SE3f::exp(-x_) = " << Sophus::SE3f::exp(-x_).matrix() << std::endl;
+//  std::cout << "[Tracker] Tji = " << Tji.matrix() << std::endl;
 }
 
 void Tracker::Optimize(Sophus::SE3f& Tji){
@@ -211,9 +210,9 @@ cv::Mat Tracker::PrecomputePatches(cv::Mat& img, pcl::PointCloud<pcl::PointXYZRG
     cv::Scalar_<float> color = cv::Scalar_<float>(temp, temp, temp);
     cv::circle(imgClone, cv::Point(uInt, vInt), 2, color, 1);
   }
-  std::cout << "[Tracker] patchBuf.rows = " << patchBuf.rows << std::endl;
-  std::cout << "[Tracker] pointcloud.size() = " << pointcloud.size() << std::endl;
-  std::cout << "[Tracker] jacobianBuf_.size() = " << jacobianBuf_.size() << std::endl;
+//  std::cout << "[Tracker] patchBuf.rows = " << patchBuf.rows << std::endl;
+//  std::cout << "[Tracker] pointcloud.size() = " << pointcloud.size() << std::endl;
+//  std::cout << "[Tracker] jacobianBuf_.size() = " << jacobianBuf_.size() << std::endl;
 
   return imgClone;
 }

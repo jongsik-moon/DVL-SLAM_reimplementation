@@ -14,6 +14,7 @@
 #include "SensorSavedData.h"
 #include "Tracker.h"
 #include <sophus/se3.hpp>
+#include "Logger.h"
 
 class System{
 public:
@@ -27,6 +28,7 @@ private:
   GraphOptimizer graphOptimizer_;
   Sensor* sensor_;
   Tracker tracker_;
+  Logger logger_;
 
   bool initialized_;
 

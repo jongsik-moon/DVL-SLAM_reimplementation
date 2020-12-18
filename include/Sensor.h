@@ -44,13 +44,6 @@ protected:
   float minZ;
   float maxZ;
 
-private:
-  ros::NodeHandle nh_;
-
-  ros::Publisher transPub;
-
-  image_transport::ImageTransport it = image_transport::ImageTransport(ros::NodeHandle());
-  image_transport::Publisher imgPub;
 };
 
 #endif //DVL_SLAM_MODIFY_SENSOR_H
