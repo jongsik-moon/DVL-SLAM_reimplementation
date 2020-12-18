@@ -13,6 +13,7 @@
 #include "Datatypes.h"
 #include "sophus/se3.hpp"
 #include <mutex>
+#include "PinholeModel.h"
 
 void createImagePyramid(const cv::Mat& img_level_0, int n_levels, ImgPyramid& pyr);
 
@@ -82,7 +83,7 @@ private:
   Sophus::SE3f Twc_;
 
   ImgPyramid imgPyramid_;
-
+  PinholeModel pinholeModel_;
   int numLevel_;
 };
 

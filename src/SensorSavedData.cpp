@@ -35,37 +35,37 @@ void SensorSavedData::data2Frame(Frame& frame)
 
   Eigen::Matrix4f transform = Eigen::Matrix4f::Identity();
 
-  transform(0, 0) = config_.r11;
-  transform(0, 1) = config_.r12;
-  transform(0, 2) = config_.r13;
+  transform(0, 0) = config_.extrinsicConfig.r11;
+  transform(0, 1) = config_.extrinsicConfig.r12;
+  transform(0, 2) = config_.extrinsicConfig.r13;
 
-  transform(1, 0) = config_.r21;
-  transform(1, 1) = config_.r22;
-  transform(1, 2) = config_.r23;
+  transform(1, 0) = config_.extrinsicConfig.r21;
+  transform(1, 1) = config_.extrinsicConfig.r22;
+  transform(1, 2) = config_.extrinsicConfig.r23;
 
-  transform(2, 0) = config_.r31;
-  transform(2, 1) = config_.r32;
-  transform(2, 2) = config_.r33;
+  transform(2, 0) = config_.extrinsicConfig.r31;
+  transform(2, 1) = config_.extrinsicConfig.r32;
+  transform(2, 2) = config_.extrinsicConfig.r33;
 
-  transform(0, 3) = config_.delX;
-  transform(1, 3) = config_.delY;
-  transform(2, 3) = config_.delZ;
+  transform(0, 3) = config_.extrinsicConfig.delX;
+  transform(1, 3) = config_.extrinsicConfig.delY;
+  transform(2, 3) = config_.extrinsicConfig.delZ;
 
   pcl::transformPointCloud(*inputCloud_, *transformedCloud, transform);
 
   Eigen::Matrix4f transformRect = Eigen::Matrix4f::Identity();
 
-  transformRect(0, 0) = config_.R11;
-  transformRect(0, 1) = config_.R12;
-  transformRect(0, 2) = config_.R13;
+  transformRect(0, 0) = config_.rectifyingConfig.R11;
+  transformRect(0, 1) = config_.rectifyingConfig.R12;
+  transformRect(0, 2) = config_.rectifyingConfig.R13;
 
-  transformRect(1, 0) = config_.R21;
-  transformRect(1, 1) = config_.R22;
-  transformRect(1, 2) = config_.R23;
+  transformRect(1, 0) = config_.rectifyingConfig.R21;
+  transformRect(1, 1) = config_.rectifyingConfig.R22;
+  transformRect(1, 2) = config_.rectifyingConfig.R23;
 
-  transformRect(2, 0) = config_.R31;
-  transformRect(2, 1) = config_.R32;
-  transformRect(2, 2) = config_.R33;
+  transformRect(2, 0) = config_.rectifyingConfig.R31;
+  transformRect(2, 1) = config_.rectifyingConfig.R32;
+  transformRect(2, 2) = config_.rectifyingConfig.R33;
 
   transformRect(0, 3) = 0;
   transformRect(1, 3) = 0;
@@ -85,7 +85,7 @@ void SensorSavedData::data2Frame(Frame& frame)
 void SensorSavedData::loadImg()
 {
   std::vector<cv::String> fn;
-  std::string filename = config_.imgDir + "*.png";
+  std::string filename = config_.datasetConfig.imgDir + "*.png";
   glob(filename.c_str(), fn, false);
 
   size_t count = fn.size();
@@ -96,7 +96,7 @@ void SensorSavedData::loadImg()
 
 void SensorSavedData::loadPointCloud()
 {
-  boost::filesystem::path lidarDir(config_.lidarDir);
+  boost::filesystem::path lidarDir(config_.datasetConfig.lidarDir);
 
   std::vector<boost::filesystem::path> filenameVec;
   copy(boost::filesystem::directory_iterator(lidarDir), boost::filesystem::directory_iterator(), std::back_inserter(filenameVec));

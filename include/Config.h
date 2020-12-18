@@ -6,7 +6,7 @@
 #define DVL_SLAM_MODIFY_CONFIG_H
 
 #include <yaml-cpp/yaml.h>
-struct Dataset
+struct DatasetConfig
 {
   bool isKitti;
   bool isIndoor;
@@ -16,7 +16,7 @@ struct Dataset
   bool visualize;
 };
 
-struct Camera
+struct CameraConfig
 {
   float fx;
   float fy;
@@ -29,7 +29,7 @@ struct Camera
   float k3;
 };
 
-struct Extrinsic
+struct ExtrinsicConfig
 {
   float delX;
   float delY;
@@ -46,7 +46,7 @@ struct Extrinsic
   float r33;
 };
 
-struct Rectifying
+struct RectifyingConfig
 {
   float R11;
   float R12;
@@ -59,56 +59,44 @@ struct Rectifying
   float R33;
 };
 
+struct ImageConfig
+{
+  int width;
+  int height;
+};
+
+struct TrackerConfig
+{
+  int imgPyramidMinLevel;
+  int imgPyramidMaxLevel;
+  int maxIteration;
+  float normXThresForIteration;
+  int border;
+};
+
+struct PointCloudConfig
+{
+  float minZ;
+  float maxZ;
+};
+
+struct LoggerConfig
+{
+  float voxelSize;
+};
 class Config{
 public:
   Config();
   ~Config();
 
-  bool isKitti;
-  bool isIndoor;
-  bool useRos;
-  std::string imgDir;
-  std::string lidarDir;
-  bool visualize;
-
-  float fx;
-  float fy;
-  float cx;
-  float cy;
-  float k1;
-  float k2;
-  float k3;
-  float p1;
-  float p2;
-
-  float delX;
-  float delY;
-  float delZ;
-
-  float r11;
-  float r12;
-  float r13;
-  float r21;
-  float r22;
-  float r23;
-  float r31;
-  float r32;
-  float r33;
-
-  float R11;
-  float R12;
-  float R13;
-  float R21;
-  float R22;
-  float R23;
-  float R31;
-  float R32;
-  float R33;
-
-  Dataset dataset;
-  Camera camera;
-  Extrinsic extrinsic;
-  Rectifying rectifying;
+  DatasetConfig datasetConfig;
+  CameraConfig cameraConfig;
+  ExtrinsicConfig extrinsicConfig;
+  RectifyingConfig rectifyingConfig;
+  ImageConfig imageConfig;
+  TrackerConfig trackerConfig;
+  PointCloudConfig pointcloudConfig;
+  LoggerConfig loggerConfig;
 
 private:
   void ReadEveryParameter(YAML::Node yamlFile);

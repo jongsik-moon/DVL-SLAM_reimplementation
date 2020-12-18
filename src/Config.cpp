@@ -25,46 +25,63 @@ void Config::ReadEveryParameter(const YAML::Node yamlFile)
   YAML::Node cameraYaml = yamlFile["Camera"];
   YAML::Node extrinsicYaml = yamlFile["Extrinsic"];
   YAML::Node rectifyingYaml = yamlFile["Rectifying"];
+  YAML::Node imageYaml = yamlFile["Image"];
+  YAML::Node trackerYaml = yamlFile["Tracker"];
+  YAML::Node pointcloudYaml = yamlFile["PointCloud"];
+  YAML::Node loggerYaml = yamlFile["Logger"];
 
-  isKitti = datasetYaml["isKitti"].as<bool>();
-  isIndoor = datasetYaml["isIndoor"].as<bool>();
-  useRos = datasetYaml["useRos"].as<bool>();
-  imgDir = datasetYaml["imgDir"].as<std::string>();
-  lidarDir = datasetYaml["lidarDir"].as<std::string>();
-  visualize = datasetYaml["visualize"].as<bool>();
+  datasetConfig.isKitti = datasetYaml["isKitti"].as<bool>();
+  datasetConfig.isIndoor = datasetYaml["isIndoor"].as<bool>();
+  datasetConfig.useRos = datasetYaml["useRos"].as<bool>();
+  datasetConfig.imgDir = datasetYaml["imgDir"].as<std::string>();
+  datasetConfig.lidarDir = datasetYaml["lidarDir"].as<std::string>();
+  datasetConfig.visualize = datasetYaml["visualize"].as<bool>();
 
-  fx = cameraYaml["fx"].as<float>();
-  fy = cameraYaml["fy"].as<float>();
-  cx = cameraYaml["cx"].as<float>();
-  cy = cameraYaml["cy"].as<float>();
-  k1 = cameraYaml["k1"].as<float>();
-  k2 = cameraYaml["k2"].as<float>();
-  p1 = cameraYaml["p1"].as<float>();
-  p2 = cameraYaml["p2"].as<float>();
-  k3 = cameraYaml["k3"].as<float>();
+  cameraConfig.fx = cameraYaml["fx"].as<float>();
+  cameraConfig.fy = cameraYaml["fy"].as<float>();
+  cameraConfig.cx = cameraYaml["cx"].as<float>();
+  cameraConfig.cy = cameraYaml["cy"].as<float>();
+  cameraConfig.k1 = cameraYaml["k1"].as<float>();
+  cameraConfig.k2 = cameraYaml["k2"].as<float>();
+  cameraConfig.p1 = cameraYaml["p1"].as<float>();
+  cameraConfig.p2 = cameraYaml["p2"].as<float>();
+  cameraConfig.k3 = cameraYaml["k3"].as<float>();
 
-  delX = extrinsicYaml["delX"].as<float>();
-  delY = extrinsicYaml["delY"].as<float>();
-  delZ = extrinsicYaml["delZ"].as<float>();
+  extrinsicConfig.delX = extrinsicYaml["delX"].as<float>();
+  extrinsicConfig.delY = extrinsicYaml["delY"].as<float>();
+  extrinsicConfig.delZ = extrinsicYaml["delZ"].as<float>();
 
-  r11 = extrinsicYaml["r11"].as<float>();
-  r12 = extrinsicYaml["r12"].as<float>();
-  r13 = extrinsicYaml["r13"].as<float>();
-  r21 = extrinsicYaml["r21"].as<float>();
-  r22 = extrinsicYaml["r22"].as<float>();
-  r23 = extrinsicYaml["r23"].as<float>();
-  r31 = extrinsicYaml["r31"].as<float>();
-  r32 = extrinsicYaml["r32"].as<float>();
-  r33 = extrinsicYaml["r33"].as<float>();
+  extrinsicConfig.r11 = extrinsicYaml["r11"].as<float>();
+  extrinsicConfig.r12 = extrinsicYaml["r12"].as<float>();
+  extrinsicConfig.r13 = extrinsicYaml["r13"].as<float>();
+  extrinsicConfig.r21 = extrinsicYaml["r21"].as<float>();
+  extrinsicConfig.r22 = extrinsicYaml["r22"].as<float>();
+  extrinsicConfig.r23 = extrinsicYaml["r23"].as<float>();
+  extrinsicConfig.r31 = extrinsicYaml["r31"].as<float>();
+  extrinsicConfig.r32 = extrinsicYaml["r32"].as<float>();
+  extrinsicConfig.r33 = extrinsicYaml["r33"].as<float>();
 
-  R11 = rectifyingYaml["R11"].as<float>();
-  R12 = rectifyingYaml["R12"].as<float>();
-  R13 = rectifyingYaml["R13"].as<float>();
-  R21 = rectifyingYaml["R21"].as<float>();
-  R22 = rectifyingYaml["R22"].as<float>();
-  R23 = rectifyingYaml["R23"].as<float>();
-  R31 = rectifyingYaml["R31"].as<float>();
-  R32 = rectifyingYaml["R32"].as<float>();
-  R33 = rectifyingYaml["R33"].as<float>();
+  rectifyingConfig.R11 = rectifyingYaml["R11"].as<float>();
+  rectifyingConfig.R12 = rectifyingYaml["R12"].as<float>();
+  rectifyingConfig.R13 = rectifyingYaml["R13"].as<float>();
+  rectifyingConfig.R21 = rectifyingYaml["R21"].as<float>();
+  rectifyingConfig.R22 = rectifyingYaml["R22"].as<float>();
+  rectifyingConfig.R23 = rectifyingYaml["R23"].as<float>();
+  rectifyingConfig.R31 = rectifyingYaml["R31"].as<float>();
+  rectifyingConfig.R32 = rectifyingYaml["R32"].as<float>();
+  rectifyingConfig.R33 = rectifyingYaml["R33"].as<float>();
 
+  imageConfig.width = imageYaml["width"].as<int>();
+  imageConfig.height = imageYaml["height"].as<int>();
+
+  trackerConfig.imgPyramidMinLevel = trackerYaml["imgPyramidMinLevel"].as<int>();
+  trackerConfig.imgPyramidMaxLevel = trackerYaml["imgPyramidMaxLevel"].as<int>();
+  trackerConfig.maxIteration = trackerYaml["maxIteration"].as<int>();
+  trackerConfig.normXThresForIteration = trackerYaml["normXThresForIteration"].as<float>();
+  trackerConfig.border = trackerYaml["border"].as<int>();
+
+  pointcloudConfig.minZ = pointcloudYaml["minZ"].as<float>();
+  pointcloudConfig.maxZ = pointcloudYaml["maxZ"].as<float>();
+
+  loggerConfig.voxelSize = loggerYaml["voxelSize"].as<float>();
 }

@@ -4,7 +4,9 @@
 
 #include "Logger.h"
 
-Logger::Logger()
+Logger::Logger(Config& config)
+  : pinholeModel_(config)
+  , config_(config)
 {
   mapPointCloud_ = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
   odometryPointCloud_ = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
@@ -14,6 +16,7 @@ Logger::Logger()
   odometryPointPub = nh_.advertise<sensor_msgs::PointCloud2>("/odometry_result", 1);
   mapPointCloudPub = nh_.advertise<sensor_msgs::PointCloud2>("/map_result", 1);
 
+  voxelSize_ = config_.loggerConfig.voxelSize;
 }
 
 Logger::~Logger()
@@ -28,13 +31,33 @@ void Logger::PushBackOdometryResult(pcl::PointXYZ odometryPoint)
 
 void Logger::PushBackMapResult(pcl::PointCloud<pcl::PointXYZRGB> mapCloud, Sophus::SE3f T)
 {
+  int border = config_.trackerConfig.border;
+
   pcl::PointCloud<pcl::PointXYZRGB> temp;
   pcl::transformPointCloud(mapCloud, temp, T.matrix());
 
-  for(auto point:temp)
+  std::vector<Eigen::Vector2f> uvSet = pinholeModel_.PointCloudXyz2UvVec(temp, 1);
+  auto pointCloudIter = temp.begin();
+  for(auto uvIter=uvSet.begin(); uvIter!=uvSet.end(); ++uvIter, ++pointCloudIter)
   {
-    mapPointCloud_->push_back(point);
+    Eigen::Vector2f uv = *uvIter;
+
+    const float uFloat = uv(0);
+    const float vFloat = uv(1);
+    const int uInt = static_cast<int> (uFloat);
+    const int vInt = static_cast<int> (vFloat);
+
+    if(pointCloudIter->r != 0)
+    {
+      mapPointCloud_->push_back(*pointCloudIter);
+    }
+
+
   }
+
+//  voxelFilter_.setInputCloud(mapPointCloud_);
+//  voxelFilter_.setLeafSize(voxelSize_, voxelSize_, voxelSize_);
+//  voxelFilter_.filter(*mapPointCloud_);
 }
 
 void Logger::SaveMapResult()
@@ -52,7 +75,7 @@ void Logger::PublishImg(cv::Mat image){
   sensor_msgs::Image img_msg;
   std_msgs::Header header;
   header.stamp = ros::Time::now();
-  img_bridge = cv_bridge::CvImage(header, "mono16", image);
+  img_bridge = cv_bridge::CvImage(header, "bgr8", image);
   img_bridge.toImageMsg(img_msg);
   imgPub.publish(img_msg);
 }

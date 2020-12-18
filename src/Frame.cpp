@@ -6,8 +6,9 @@
 
 Frame::Frame(Config &config)
   : config_(config)
+  , pinholeModel_(config)
 {
-  numLevel_ = 2;
+  numLevel_ = config_.trackerConfig.imgPyramidMaxLevel - config.trackerConfig.imgPyramidMinLevel + 1;
 }
 
 Frame::~Frame(){
@@ -45,7 +46,6 @@ cv::Mat& Frame::GetPyramidImg(size_t level){ return imgPyramid_[level]; }
 
 void Frame::SetOriginalImg(cv::Mat originalImg){
   this->originalImg_ = originalImg;
-
   originalImg_.convertTo(originalImg_, CV_32FC3, 1.0/255);
   cvtColor(originalImg, gray_, cv::COLOR_BGR2GRAY);
   gray_.convertTo(gray_, CV_32FC1, 1.0/255);
@@ -55,7 +55,34 @@ void Frame::SetOriginalImg(cv::Mat originalImg){
 
 pcl::PointCloud<pcl::PointXYZRGB>& Frame::GetOriginalCloud(){ return originalCloud_; }
 
-void Frame::SetOriginalCloud(pcl::PointCloud<pcl::PointXYZRGB> originalCloud){ this->originalCloud_ = originalCloud; }
+void Frame::SetOriginalCloud(pcl::PointCloud<pcl::PointXYZRGB> originalCloud)
+{
+  int border = config_.trackerConfig.border;
+  this->originalCloud_ = originalCloud;
+  std::vector<Eigen::Vector2f> uvSet = pinholeModel_.PointCloudXyz2UvVec(originalCloud_, 1);
+  auto pointCloudIter = originalCloud_.begin();
+  for(auto uvIter=uvSet.begin(); uvIter!=uvSet.end(); ++uvIter, ++pointCloudIter){
+    Eigen::Vector2f uv = *uvIter;
+
+    const float uFloat = uv(0);
+    const float vFloat = uv(1);
+    const int uInt = static_cast<int> (uFloat);
+    const int vInt = static_cast<int> (vFloat);
+
+    if(uInt - border < 0 || uInt + border > config_.imageConfig.width || vInt - border < 0 || vInt + border > config_.imageConfig.height || pointCloudIter->z <= 0.0){
+      continue;
+    }
+    pointCloudIter->b = 255*originalImg_.at<cv::Vec3f>(vInt, uInt)(0);
+    pointCloudIter->g = 255*originalImg_.at<cv::Vec3f>(vInt, uInt)(1);
+    pointCloudIter->r = 255*originalImg_.at<cv::Vec3f>(vInt, uInt)(2);
+//    std::cout << "pointCloudIter->b = 255*originalImg_.at<cv::Vec3f>(vInt, uInt)(0)" << 255*originalImg_.at<cv::Vec3f>(vInt, uInt) << std::endl;
+//    std::cout << "pointCloudIter->b = 255*originalImg_.at<cv::Vec3f>(vInt, uInt)(0)" << 255*originalImg_.at<cv::Vec3f>(vInt, uInt)(0) << std::endl;
+//    std::cout << "pointCloudIter->b = 255*originalImg_.at<cv::Vec3f>(vInt, uInt)(1)" << 255*originalImg_.at<cv::Vec3f>(vInt, uInt)(1) << std::endl;
+//    std::cout << "pointCloudIter->b = 255*originalImg_.at<cv::Vec3f>(vInt, uInt)(2)" << 255*originalImg_.at<cv::Vec3f>(vInt, uInt)(2) << std::endl;
+
+  }
+
+}
 
 Sophus::SE3f Frame::GetTwc(){ return Twc_; }
 
@@ -68,8 +95,8 @@ cv::Mat Frame::pointCloudProjection()
 
   for(int i=0; i<originalCloud_.points.size(); i++)
   {
-    float U = config_.fx * (originalCloud_.points[i].x / originalCloud_.points[i].z) + config_.cx;
-    float V = config_.fy * (originalCloud_.points[i].y / originalCloud_.points[i].z) + config_.cy;
+    float U = config_.cameraConfig.fx * (originalCloud_.points[i].x / originalCloud_.points[i].z) + config_.cameraConfig.cx;
+    float V = config_.cameraConfig.fy * (originalCloud_.points[i].y / originalCloud_.points[i].z) + config_.cameraConfig.cy;
 
     float v_min = 0.15;    float v_max = 50.0;    float dv = v_max - v_min;
     float v = originalCloud_.points[i].z;

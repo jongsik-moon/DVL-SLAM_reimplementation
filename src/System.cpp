@@ -7,14 +7,15 @@
 System::System(Config& config)
   : config_(config),
     graphOptimizer_(config),
-    tracker_(config)
+    tracker_(config),
+    logger_(config)
 {
   initialized_ = false;
 
   keyFrameDB_.reset(new KeyFrameDB());
   frameDB_.reset(new FrameDB());
 
-  if(config_.useRos) { sensor_ = new SensorRos(config); }
+  if(config_.datasetConfig.useRos) { sensor_ = new SensorRos(config); }
   else { sensor_ = new SensorSavedData(config); }
 }
 

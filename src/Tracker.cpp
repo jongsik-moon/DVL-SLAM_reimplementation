@@ -8,12 +8,13 @@ Tracker::Tracker(Config &config)
   , pinholeModel_(config)
 {
   huberK_ = 1.345;
-  maxIteration = 100;
   residual_ = 0;
-  eps_ = 0.0005;
 
-  minLevel_ = 0;
-  maxLevel_ = 1;
+  normXThres_ = config_.trackerConfig.normXThresForIteration;
+  minLevel_ = config_.trackerConfig.imgPyramidMinLevel;
+  maxLevel_ = config_.trackerConfig.imgPyramidMaxLevel;
+  maxIteration = config_.trackerConfig.maxIteration;
+
 }
 
 Tracker::~Tracker(){
@@ -85,7 +86,7 @@ void Tracker::Optimize(Sophus::SE3f& Tji){
     residual_ = newResidual;
     std::cout << "[Optimize] NormMax(x_) = " << NormMax(x_) << std::endl;
 
-    if(NormMax(x_) < eps_){
+    if(NormMax(x_) < normXThres_){
       status_ = true;
 
       if ( ((x_ - x_).array() != (x_ - x_).array()).all() )
@@ -134,14 +135,14 @@ float Tracker::HuberWeight(const float res){
 //}
 
 cv::Mat Tracker::PrecomputePatches(cv::Mat& img, pcl::PointCloud<pcl::PointXYZRGB>& pointcloud, cv::Mat& patchBuf, bool isDerivative){
-  const int border = patch_halfsize_ + 4;
-  const int stride = img.cols;
-  const float scale = 1.0f/(1<<currentLevel_);
+  int border = config_.trackerConfig.border;
+  int stride = img.cols;
+  float scale = 1.0f/(1<<currentLevel_);
 
   std::vector<Eigen::Vector2f> uvSet = pinholeModel_.PointCloudXyz2UvVec(pointcloud, scale);
-  patchBuf = cv::Mat(pointcloud.size(), pattern_length_, CV_32F);
+  patchBuf = cv::Mat(pointcloud.size(), patternLength_, CV_32F);
   if(isDerivative){
-    jacobianBuf_.resize(Eigen::NoChange, patchBuf.rows * pattern_length_);
+    jacobianBuf_.resize(Eigen::NoChange, patchBuf.rows * patternLength_);
     jacobianBuf_.setZero();
   }
 
@@ -170,8 +171,8 @@ cv::Mat Tracker::PrecomputePatches(cv::Mat& img, pcl::PointCloud<pcl::PointXYZRG
     const int vInt = static_cast<int> (vFloat);
 
     if(uInt - border < 0 || uInt + border > img.cols || vInt - border < 0 || vInt + border > img.rows || pointCloudIter->z <= 0.0){
-      float* patchBufPtr = reinterpret_cast<float *> (patchBuf.data) + pattern_length_ * pointCounter;
-      for(int i=0; i<pattern_length_; ++i, ++patchBufPtr)
+      float* patchBufPtr = reinterpret_cast<float *> (patchBuf.data) + patternLength_ * pointCounter;
+      for(int i=0; i<patternLength_; ++i, ++patchBufPtr)
         *patchBufPtr = std::numeric_limits<float>::quiet_NaN();
       continue;
     }
@@ -184,9 +185,9 @@ cv::Mat Tracker::PrecomputePatches(cv::Mat& img, pcl::PointCloud<pcl::PointXYZRG
     const float wBR = subpixURef * subpixVRef;
 
     size_t pixelCounter = 0;
-    float* patchBufPtr = reinterpret_cast<float *> (patchBuf.data) + pattern_length_ * pointCounter;
+    float* patchBufPtr = reinterpret_cast<float *> (patchBuf.data) + patternLength_ * pointCounter;
 
-    for (int i=0; i<pattern_length_; ++i, ++pixelCounter, ++patchBufPtr){
+    for (int i=0; i<patternLength_; ++i, ++pixelCounter, ++patchBufPtr){
       int x = pattern_[i][0];
       int y = pattern_[i][1];
 
@@ -203,10 +204,10 @@ cv::Mat Tracker::PrecomputePatches(cv::Mat& img, pcl::PointCloud<pcl::PointXYZRG
        Eigen::Vector3f xyz(pointCloudIter->x, pointCloudIter->y, pointCloudIter->z);
        Frame::jacobian_xyz2uv(xyz, frameJacobian);
 
-       jacobianBuf_.col(pointCounter*pattern_length_ + pixelCounter) = (dx*config_.fx * frameJacobian.row(0) + dy*config_.fy*frameJacobian.row(1)) / (1 << currentLevel_);
+       jacobianBuf_.col(pointCounter*patternLength_ + pixelCounter) = (dx*config_.cameraConfig.fx * frameJacobian.row(0) + dy*config_.cameraConfig.fy*frameJacobian.row(1)) / (1 << currentLevel_);
      }
     }
-    temp /= pattern_length_;
+    temp /= patternLength_;
     cv::Scalar_<float> color = cv::Scalar_<float>(temp, temp, temp);
     cv::circle(imgClone, cv::Point(uInt, vInt), 2, color, 1);
   }
@@ -234,10 +235,10 @@ double Tracker::ComputeResiduals(Sophus::SE3f &transformation)
   pcl::PointCloud<pcl::PointXYZRGB> currPointCloud;
   pcl::transformPointCloud(referenceFrame_->frame->GetOriginalCloud(), currPointCloud, transformation.matrix());
   currImgClone = PrecomputePatches(currImg, currPointCloud, currPatchBuf_, false);
-  cv::Mat errors = cv::Mat(currPointCloud.size(), pattern_length_, CV_32F);
+  cv::Mat errors = cv::Mat(currPointCloud.size(), patternLength_, CV_32F);
   errors = currPatchBuf_ - refPatchBuf_;
 
-  if(config_.visualize){
+  if(config_.datasetConfig.visualize){
     cv::Mat diff = currImgClone - refImgClone;
     cv::Mat temp1, temp2, temp3;
     temp1 = refImgClone.clone();
@@ -344,13 +345,3 @@ void Tracker::trackFrame2Frame(Frame::Ptr currFrame, KeyFrame::Ptr refFrame, Sop
   std::cout << "[Tracker] Optimization finished" << std::endl;
 
 }
-//if(config_.visualize){
-//cv::Mat temp1, temp2;
-//temp1 = refPatchBuf_.clone();
-//temp1.convertTo(temp1, CV_8UC1);
-//cv::imshow("refPatchBuf_", temp1);
-//cv::waitKey(3000);
-//
-////      sensor_->publishImg(keyFrame->frame->GetPyramidImg(1));
-//
-//}

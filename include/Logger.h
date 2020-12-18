@@ -19,10 +19,13 @@
 #include <sophus/se3.hpp>
 #include <geometry_msgs/PoseStamped.h>
 #include <pcl_ros/transforms.h>
+#include <pcl/filters/voxel_grid.h>
+#include "PinholeModel.h"
+#include "Config.h"
 
 class Logger{
 public:
-  Logger();
+  Logger(Config& config);
   ~Logger();
 
   void PushBackOdometryResult(pcl::PointXYZ odometryPoint);
@@ -39,6 +42,8 @@ public:
 
 
 private:
+  Config &config_;
+
   pcl::PointCloud<pcl::PointXYZ>::Ptr odometryPointCloud_;
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr mapPointCloud_;
 
@@ -53,6 +58,10 @@ private:
 
   image_transport::ImageTransport it = image_transport::ImageTransport(ros::NodeHandle());
   image_transport::Publisher imgPub;
+
+  pcl::VoxelGrid<pcl::PointXYZRGB> voxelFilter_;
+  double voxelSize_;
+  PinholeModel pinholeModel_;
 };
 
 

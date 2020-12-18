@@ -10,10 +10,8 @@ Sensor::Sensor(Config& config)
   lidarFlag_ = false;
   imgFlag_ = false;
 
-  minZ = 0.15f;
-  maxZ = 50.0f;
-
-
+  minZ = config_.pointcloudConfig.minZ;
+  maxZ = config_.pointcloudConfig.maxZ;
 
   inputCloud_ = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
 }

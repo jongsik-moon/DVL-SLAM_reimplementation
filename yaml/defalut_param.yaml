@@ -39,3 +39,21 @@ Rectifying:
   R31: 0.0
   R32: 0.0
   R33: 1.0
+
+Image:
+  width: 1226
+  height: 370
+
+PointCloud:
+  minZ: 0.15
+  maxZ: 50.0
+
+Tracker:
+  imgPyramidMinLevel: 0
+  imgPyramidMaxLevel: 1
+  maxIteration: 100
+  normXThresForIteration: 0.0005
+  border: 6
+
+Logger:
+  voxelSize: 0.03

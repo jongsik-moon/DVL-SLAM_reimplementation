@@ -22,8 +22,7 @@ float KeyFrame::GetVisibleRatio (const KeyFrame::Ptr keyframe)
 
   Sophus::SE3f Tij = frame->GetTwc().inverse() * keyframe->frame->GetTwc();
 
-  int patch_halfsize_ = 2;
-  const int border = patch_halfsize_+2;
+  int border = config_.trackerConfig.border;
   int currentLevel = 0;
 
   cv::Mat& current_img = frame->GetPyramidImg(currentLevel);
@@ -43,7 +42,7 @@ float KeyFrame::GetVisibleRatio (const KeyFrame::Ptr keyframe)
     const int u_prev_i = static_cast<int> (u_prev_f);
     const int v_prev_i = static_cast<int> (v_prev_f);
 
-    if (u_prev_i - border < 0 || u_prev_i + border > current_img.cols || v_prev_i - border < 0 || v_prev_i + border > current_img.rows || xyz_prev(2) <= 0)
+    if (u_prev_i - border < 0 || u_prev_i + border > config_.imageConfig.width || v_prev_i - border < 0 || v_prev_i + border > config_.imageConfig.height || xyz_prev(2) <= 0)
       continue;
 
     visible_points++;

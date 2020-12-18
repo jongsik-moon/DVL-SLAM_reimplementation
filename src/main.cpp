@@ -15,7 +15,7 @@ int main(int argc, char** argv){
   Config Config;
   System System(Config);
 
-  if(Config.useRos){
+  if(Config.datasetConfig.useRos){
     while(ros::ok()){
       System.Run();
       ros::spinOnce();

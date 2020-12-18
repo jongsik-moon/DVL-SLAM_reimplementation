@@ -14,11 +14,9 @@
 
 class Tracker{
 
-  static const int patch_halfsize_ = 2;
-  static const int patch_size_ = 2*patch_halfsize_;
-  static const int patch_area_ = patch_size_*patch_size_;
-
-  static const int pattern_length_ = 8;
+  static const int patchHalfsize_ = 2;
+  static const int patchSize_ = 2*patchHalfsize_;
+  static const int patternLength_ = 8;
   int pattern_[8][2] = { {0, 0}, {2, 0}, {1, 1}, {0, -2}, {-1, -1}, {-2, 0}, {-1, 1}, {0, 2} };
 
 public:
@@ -119,7 +117,7 @@ private:
 
   int maxIteration;
   float residual_;
-  float eps_;
+  float normXThres_;
   bool status_;
 
 
