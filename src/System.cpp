@@ -59,13 +59,8 @@ void System::Run(){
 
     KeyFrame::Ptr lastKeyFrame = keyFrameDB_->LatestKeyframe();
 
-    Sophus::SE3f prevTji = Tji_;
-    Tji_ = Tji_ * dTji_;
     tracker_.trackFrame2Frame(currFrame, lastKeyFrame, Tji_);
-
-    dTji_ = Tji_ * prevTji.inverse();
     Tij_ = Tji_.inverse();
-
     std::cout << "[System] Tracking Finished" << std::endl;
 
     Sophus::SE3f Twc = lastKeyFrame->frame->GetTwc();

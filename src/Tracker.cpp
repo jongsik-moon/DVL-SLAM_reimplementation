@@ -159,16 +159,29 @@ cv::Mat Tracker::PrecomputePatches(cv::Mat& img, pcl::PointCloud<pcl::PointXYZRG
 //      std::cout << "[Optimize] img.at<float>(uInt, vInt)0 = " << img.at<float>(i, j) << std::endl;
 //    }
 //  }
+//  std::cout << "[PrecomputePatches] DEBUG1" << std::endl;
+//  std::cout << "[PrecomputePatches] pointNum = " << pointNum << std::endl;
 
   float temp;
+  float debug = 0;
   for(auto uvIter=uvSet.begin(); uvIter!=uvSet.end(); ++uvIter, ++pointCloudIter, ++pointCounter){
+    debug++;
     temp = 0;
     Eigen::Vector2f uv = *uvIter;
-
     const float uFloat = uv(0);
     const float vFloat = uv(1);
-    const int uInt = static_cast<int> (uFloat);
-    const int vInt = static_cast<int> (vFloat);
+    const long long int uInt = static_cast<long long int> (uFloat);
+    const long long int vInt = static_cast<long long int> (vFloat);
+//    std::cout << "[PrecomputePatches] uv(0) : " << uv(0) << std::endl;
+//    std::cout << "[PrecomputePatches] uv(1) : " << uv(1) << std::endl;
+//    std::cout << "[PrecomputePatches] vFloat : " << vFloat << std::endl;
+//    std::cout << "[PrecomputePatches] uFloat : " << uFloat << std::endl;
+//    std::cout << "[PrecomputePatches] vInt : " << vInt << std::endl;
+//    std::cout << "[PrecomputePatches] uInt : " << uInt << std::endl;
+//    std::cout << "[PrecomputePatches] uInt - border < 0 : " << (uInt - border < 0) << std::endl;
+//    std::cout << "[PrecomputePatches] vInt - border < 0 : " << (vInt - border < 0) << std::endl;
+//    std::cout << "[PrecomputePatches] uInt + border > img.cols : " << (uInt + border > img.cols) << std::endl;
+//    std::cout << "[PrecomputePatches] vInt + border > img.rows : " << (vInt + border > img.rows) << std::endl;
 
     if(uInt - border < 0 || uInt + border > img.cols || vInt - border < 0 || vInt + border > img.rows || pointCloudIter->z <= 0.0){
       float* patchBufPtr = reinterpret_cast<float *> (patchBuf.data) + patternLength_ * pointCounter;
@@ -186,13 +199,22 @@ cv::Mat Tracker::PrecomputePatches(cv::Mat& img, pcl::PointCloud<pcl::PointXYZRG
 
     size_t pixelCounter = 0;
     float* patchBufPtr = reinterpret_cast<float *> (patchBuf.data) + patternLength_ * pointCounter;
+//    std::cout << "[PrecomputePatches] debug3 : " << debug << std::endl;
 
     for (int i=0; i<patternLength_; ++i, ++pixelCounter, ++patchBufPtr){
       int x = pattern_[i][0];
       int y = pattern_[i][1];
-
+//      std::cout << "[PrecomputePatches] debug4"<< std::endl;
       float* imgPtr = (float*) img.data + (vInt + y) * stride + (uInt + x);
+//      std::cout << "[PrecomputePatches] vInt : " << vInt << std::endl;
+//      std::cout << "[PrecomputePatches] y : " << y << std::endl;
+//      std::cout << "[PrecomputePatches] uInt : " << uInt << std::endl;
+//      std::cout << "[PrecomputePatches] x : " << x << std::endl;
+
       *patchBufPtr = wTL * imgPtr[0] + wTR * imgPtr[1] + wBL * imgPtr[stride] + wBR * imgPtr[stride + 1];
+//      std::cout << "[PrecomputePatches] debug3 : " << debug << std::endl;
+
+
       temp += *patchBufPtr;
      if(isDerivative){
        float dx = 0.5f * ((wTL*imgPtr[1] + wTR*imgPtr[2] + wBL*imgPtr[stride+1] + wBR*imgPtr[stride+2])
@@ -207,13 +229,16 @@ cv::Mat Tracker::PrecomputePatches(cv::Mat& img, pcl::PointCloud<pcl::PointXYZRG
        jacobianBuf_.col(pointCounter*patternLength_ + pixelCounter) = (dx*config_.cameraConfig.fx * frameJacobian.row(0) + dy*config_.cameraConfig.fy*frameJacobian.row(1)) / (1 << currentLevel_);
      }
     }
+//    std::cout << "[PrecomputePatches] debug : " << debug << std::endl;
+
     temp /= patternLength_;
     cv::Scalar_<float> color = cv::Scalar_<float>(temp, temp, temp);
     cv::circle(imgClone, cv::Point(uInt, vInt), 2, color, 1);
   }
-//  std::cout << "[Tracker] patchBuf.rows = " << patchBuf.rows << std::endl;
-//  std::cout << "[Tracker] pointcloud.size() = " << pointcloud.size() << std::endl;
-//  std::cout << "[Tracker] jacobianBuf_.size() = " << jacobianBuf_.size() << std::endl;
+  std::cout << "[Tracker] patchBuf.rows = " << patchBuf.rows << std::endl;
+  std::cout << "[Tracker] pointcloud.size() = " << pointcloud.size() << std::endl;
+  std::cout << "[Tracker] jacobianBuf_.size() = " << jacobianBuf_.size() << std::endl;
+
 
   return imgClone;
 }
@@ -231,7 +256,11 @@ double Tracker::ComputeResiduals(Sophus::SE3f &transformation)
     refImgClone = PrecomputePatches(referenceImg, referencePointCloud, refPatchBuf_, true);
     isPreComputed_ = true;
   }
+  std::cout << "[ComputeResiduals] transformation.matrix()" << std::endl;
+  std::cout << transformation.matrix() << std::endl;
   cv::Mat &currImg = currentFrame_->GetPyramidImg(currentLevel_);
+  std::cout << "[ComputeResiduals] currentLevel_" << std::endl;
+  std::cout << currentLevel_ << std::endl;
   pcl::PointCloud<pcl::PointXYZRGB> currPointCloud;
   pcl::transformPointCloud(referenceFrame_->frame->GetOriginalCloud(), currPointCloud, transformation.matrix());
   currImgClone = PrecomputePatches(currImg, currPointCloud, currPatchBuf_, false);
@@ -259,6 +288,29 @@ double Tracker::ComputeResiduals(Sophus::SE3f &transformation)
       if(key == 27) break;
     }
   }
+//  time_t rawtime = time(nullptr);
+//  struct tm* time_info = localtime(&rawtime);
+//
+//  char logTime[13];
+//  sprintf(logTime, "%02d%02d%02d_%02d%02d%02d", (time_info->tm_year) - 100, (time_info->tm_mon) + 1, time_info->tm_mday,
+//          time_info->tm_hour, time_info->tm_min, time_info->tm_sec);
+//  std::string curPath = "/home/jongsik/modu_ws/img_result/";
+//  std::string mappingLogFilenameRef = curPath + "Ref/" + logTime + ".jpg";
+//  std::string mappingLogFilenameCurr = curPath + "Curr/" + logTime + ".jpg";
+//  std::string mappingLogFilenameDiff = curPath + "Diff/" + logTime + ".jpg";
+
+
+//  cv::Mat diff = currImgClone - refImgClone;
+//  cv::Mat temp1, temp2, temp3;
+//  temp1 = refImgClone.clone();
+//  temp2 = currImgClone.clone();
+//  temp3 = diff.clone();
+//  temp1.convertTo(temp1, CV_8U, 255);
+//  temp2.convertTo(temp2, CV_8U, 255);
+//  temp3.convertTo(temp3, CV_8U, 255);
+//  cv::imwrite(mappingLogFilenameRef, temp1);
+//  cv::imwrite(mappingLogFilenameCurr, temp2);
+//  cv::imwrite(mappingLogFilenameDiff, temp3);
 
   scale_ = compute(errors);
 
@@ -341,6 +393,7 @@ void Tracker::trackFrame2Frame(Frame::Ptr currFrame, KeyFrame::Ptr refFrame, Sop
     isPreComputed_ = false;
     stop_ = false;
     Optimize(transformation);
+
   }
   std::cout << "[Tracker] Optimization finished" << std::endl;
 
