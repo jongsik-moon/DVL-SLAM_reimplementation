@@ -8,13 +8,19 @@ Logger::Logger(Config& config)
   : pinholeModel_(config)
   , config_(config)
 {
-  mapPointCloud_ = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
+  mapColorPointCloud_ = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
+  mapNonColorPointCloud_ = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
+
   odometryPointCloud_ = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
 
   imgPub =  it.advertise("/camera/image", 1);
   transPub = nh_.advertise<geometry_msgs::PoseStamped>("/pose_result", 1);
   odometryPointPub = nh_.advertise<sensor_msgs::PointCloud2>("/odometry_result", 1);
-  mapPointCloudPub = nh_.advertise<sensor_msgs::PointCloud2>("/map_result", 1);
+  colorMapPointCloudPub = nh_.advertise<sensor_msgs::PointCloud2>("/color_map_result", 1);
+  nonColorMapPointCloudPub = nh_.advertise<sensor_msgs::PointCloud2>("/noncolor_octomap_result", 1);
+
+  colorTree_ = new octomap::ColorOcTree(0.05);
+  nonColorTree_ = new octomap::ColorOcTree(0.05);
 
   voxelSize_ = config_.loggerConfig.voxelSize;
 }
@@ -29,15 +35,14 @@ void Logger::PushBackOdometryResult(pcl::PointXYZ odometryPoint)
   this->odometryPointCloud_->push_back(odometryPoint);
 }
 
-void Logger::PushBackMapResult(pcl::PointCloud<pcl::PointXYZRGB> mapCloud, Sophus::SE3f T)
+void Logger::PushBackColorMapResult(pcl::PointCloud<pcl::PointXYZRGB> mapCloud, Sophus::SE3f T)
 {
+  pcl::PointCloud<pcl::PointXYZRGB> temp;
+
   int border = config_.trackerConfig.border;
 
-  pcl::PointCloud<pcl::PointXYZRGB> temp;
-  pcl::transformPointCloud(mapCloud, temp, T.matrix());
-
-  std::vector<Eigen::Vector2f> uvSet = pinholeModel_.PointCloudXyz2UvVec(temp, 1);
-  auto pointCloudIter = temp.begin();
+  std::vector<Eigen::Vector2f> uvSet = pinholeModel_.PointCloudXyz2UvVec(mapCloud, 1);
+  auto pointCloudIter = mapCloud.begin();
   for(auto uvIter=uvSet.begin(); uvIter!=uvSet.end(); ++uvIter, ++pointCloudIter)
   {
     Eigen::Vector2f uv = *uvIter;
@@ -47,17 +52,75 @@ void Logger::PushBackMapResult(pcl::PointCloud<pcl::PointXYZRGB> mapCloud, Sophu
     const int uInt = static_cast<int> (uFloat);
     const int vInt = static_cast<int> (vFloat);
 
-    if(pointCloudIter->r != 0)
-    {
-      mapPointCloud_->push_back(*pointCloudIter);
+    if(uInt - border < 0 || uInt + border > config_.imageConfig.width || vInt - border < 0 || vInt + border > config_.imageConfig.height || pointCloudIter->z <= 0.0){
+      continue;
     }
 
+    pcl::PointXYZRGB point;
+    point.x = pointCloudIter->x;
+    point.y = pointCloudIter->y;
+    point.z = pointCloudIter->z;
 
+    point.r = pointCloudIter->r;
+    point.g = pointCloudIter->g;
+    point.b = pointCloudIter->b;
+
+    temp.push_back(point);
   }
 
-//  voxelFilter_.setInputCloud(mapPointCloud_);
-//  voxelFilter_.setLeafSize(voxelSize_, voxelSize_, voxelSize_);
-//  voxelFilter_.filter(*mapPointCloud_);
+  pcl::PointCloud<pcl::PointXYZRGB> transformedTemp;
+
+  pcl::transformPointCloud(temp, transformedTemp, T.matrix());
+
+  for (auto p:transformedTemp.points)
+  {
+    // The point cloud of points into the octomap
+    colorTree_->updateNode( octomap::point3d(p.x, p.y, p.z), true );
+  }
+  for (auto p:transformedTemp.points)
+  {
+    colorTree_->integrateNodeColor( p.x, p.y, p.z, p.r, p.g, p.b );
+  }
+
+  colorTree_->updateInnerOccupancy();
+
+  pcl::PointXYZRGB Point;
+  for (octomap::ColorOcTree::tree_iterator it = colorTree_->begin_tree(), end = colorTree_->end_tree(); it != end; ++it) {
+    if (colorTree_->isNodeOccupied(*it)) {
+      Point.x = it.getX();
+      Point.y = it.getY();
+      Point.z = it.getZ();
+      Point.r = it->getColor().r;
+      Point.g = it->getColor().g;
+      Point.b = it->getColor().b;
+
+      mapColorPointCloud_->push_back(Point);
+    }
+  }
+}
+
+void Logger::PushBackNonColorMapResult(pcl::PointCloud<pcl::PointXYZRGB> mapCloud, Sophus::SE3f T)
+{
+  pcl::PointCloud<pcl::PointXYZRGB> temp;
+  pcl::transformPointCloud(mapCloud, temp, T.matrix());
+
+  for (auto p:temp.points)
+  {
+    nonColorTree_->updateNode( octomap::point3d(p.x, p.y, p.z), true );
+  }
+
+  nonColorTree_->updateInnerOccupancy();
+
+  pcl::PointXYZRGB Point;
+
+  for (octomap::ColorOcTree::tree_iterator it = nonColorTree_->begin_tree(), end = nonColorTree_->end_tree(); it != end; ++it) {
+    if (nonColorTree_->isNodeOccupied(*it)) {
+      Point.x = it.getX();
+      Point.y = it.getY();
+      Point.z = it.getZ();
+      mapNonColorPointCloud_->push_back(Point);
+    }
+  }
 }
 
 void Logger::SaveMapResult()
@@ -110,9 +173,18 @@ void Logger::PublishOdometryPoint(){
   odometryPC2.header.stamp = ros::Time::now();
   odometryPointPub.publish(odometryPC2);
 }
-void Logger::PublishMapPointCloud(){
-  pcl::toROSMsg(*mapPointCloud_, mapPC2);
+
+void Logger::PublishNonColorMapPointCloud(){
+  pcl::toROSMsg(*mapNonColorPointCloud_, mapPC2);
   mapPC2.header.frame_id = "world";
   mapPC2.header.stamp = ros::Time::now();
-  mapPointCloudPub.publish(mapPC2);
+  nonColorMapPointCloudPub.publish(mapPC2);
 }
+
+void Logger::PublishColorMapPointCloud(){
+  pcl::toROSMsg(*mapColorPointCloud_, mapPC2);
+  mapPC2.header.frame_id = "world";
+  mapPC2.header.stamp = ros::Time::now();
+  colorMapPointCloudPub.publish(mapPC2);
+}
+

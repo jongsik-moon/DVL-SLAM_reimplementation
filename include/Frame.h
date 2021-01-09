@@ -32,8 +32,9 @@ public:
   void showImg(cv::Mat& img);
   void saveImg(cv::Mat& img);
 
-  cv::Mat& GetPyramidImg(size_t level);
+  cv::Mat&  GetPyramidImg(size_t level);
   void SetOriginalImg(cv::Mat originalImg);
+  cv::Mat GetOriginalImg();
 
   pcl::PointCloud<pcl::PointXYZRGB>& GetOriginalCloud();
   void SetOriginalCloud(pcl::PointCloud<pcl::PointXYZRGB> originalCloud);

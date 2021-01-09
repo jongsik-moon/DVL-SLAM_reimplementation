@@ -22,6 +22,9 @@
 #include <pcl/filters/voxel_grid.h>
 #include "PinholeModel.h"
 #include "Config.h"
+#include <octomap_msgs/Octomap.h>
+#include <octomap/ColorOcTree.h>
+#include <octomap_msgs/conversions.h>
 
 class Logger{
 public:
@@ -29,7 +32,8 @@ public:
   ~Logger();
 
   void PushBackOdometryResult(pcl::PointXYZ odometryPoint);
-  void PushBackMapResult(pcl::PointCloud<pcl::PointXYZRGB> mapCloud, Sophus::SE3f T);
+  void PushBackColorMapResult(pcl::PointCloud<pcl::PointXYZRGB> mapCloud, Sophus::SE3f T);
+  void PushBackNonColorMapResult(pcl::PointCloud<pcl::PointXYZRGB> mapCloud, Sophus::SE3f T);
 
   void SaveOdometryResult();
   void SaveMapResult();
@@ -38,23 +42,30 @@ public:
   void PublishTransform(Sophus::SE3f input);
 
   void PublishOdometryPoint();
-  void PublishMapPointCloud();
-
+  void PublishColorMapPointCloud();
+  void PublishNonColorMapPointCloud();
 
 private:
   Config &config_;
 
   pcl::PointCloud<pcl::PointXYZ>::Ptr odometryPointCloud_;
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr mapPointCloud_;
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr mapColorPointCloud_;
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr mapNonColorPointCloud_;
+
+  octomap::ColorOcTree* colorTree_;
+  octomap::ColorOcTree* nonColorTree_;
 
   sensor_msgs::PointCloud2 odometryPC2;
   sensor_msgs::PointCloud2 mapPC2;
+
+  octomap_msgs::Octomap mapOcto_;
 
   ros::NodeHandle nh_;
 
   ros::Publisher transPub;
   ros::Publisher odometryPointPub;
-  ros::Publisher mapPointCloudPub;
+  ros::Publisher colorMapPointCloudPub;
+  ros::Publisher nonColorMapPointCloudPub;
 
   image_transport::ImageTransport it = image_transport::ImageTransport(ros::NodeHandle());
   image_transport::Publisher imgPub;

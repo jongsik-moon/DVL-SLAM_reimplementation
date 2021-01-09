@@ -21,10 +21,12 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   cv_bridge
   nav_msgs
+  octomap_msgs
 )
 
 find_package(yaml-cpp REQUIRED)
 find_package(OpenCV 3.4 REQUIRED)
+find_package(octomap REQUIRED)
 
 find_package(PCL REQUIRED)
 message("[PCL Version] : ${PCL_VERSION}")
@@ -53,6 +55,8 @@ include_directories(
   ${CHOLMOD_INCLUDE_DIR}
   ${G2O_INCLUDE_DIR}
   ${OpenCV_INCLUDE_DIRS}
+  ${OCTOMAP_INCLUDE_DIRS}
+
 )
 
 add_executable(dvl_slam_modify
@@ -88,4 +92,5 @@ target_link_libraries(dvl_slam_modify
   ${G2O_TYPES_SBA}
   ${OpenCV_LIBRARIES}
   ${OpenCV_LIBS}
+  ${OCTOMAP_LIBRARIES}
 )

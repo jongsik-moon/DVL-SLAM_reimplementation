@@ -15,6 +15,8 @@
 #include "Tracker.h"
 #include <sophus/se3.hpp>
 #include "Logger.h"
+#include <octomap/ColorOcTree.h>
+#include <octomap/octomap.h>
 
 class System{
 public:
@@ -34,7 +36,6 @@ private:
 
   Sophus::SE3f Tij_;
   Sophus::SE3f Tji_;
-  Sophus::SE3f dTji_;
 
   FrameDB::Ptr frameDB_;
   KeyFrameDB::Ptr keyFrameDB_;

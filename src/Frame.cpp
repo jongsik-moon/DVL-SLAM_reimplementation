@@ -44,6 +44,8 @@ void Frame::createImagePyramid()
 
 cv::Mat& Frame::GetPyramidImg(size_t level){ return imgPyramid_[level]; }
 
+cv::Mat Frame::GetOriginalImg(){ return originalImg_; }
+
 void Frame::SetOriginalImg(cv::Mat originalImg){
   this->originalImg_ = originalImg;
   originalImg_.convertTo(originalImg_, CV_32FC3, 1.0/255);

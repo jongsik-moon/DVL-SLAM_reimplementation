@@ -14,7 +14,6 @@ System::System(Config& config)
 
   keyFrameDB_.reset(new KeyFrameDB());
   frameDB_.reset(new FrameDB());
-
   if(config_.datasetConfig.useRos) { sensor_ = new SensorRos(config); }
   else { sensor_ = new SensorSavedData(config); }
 }
@@ -94,11 +93,13 @@ void System::Run(){
     odometryLogger.y = T.translation()[1];
     odometryLogger.z = T.translation()[2];
 
-    logger_.PushBackOdometryResult(odometryLogger);
-    logger_.PushBackMapResult(lastKeyFrame->frame->GetOriginalCloud(), T);
-    logger_.PublishOdometryPoint();
-    logger_.PublishMapPointCloud();
 
+    logger_.PushBackOdometryResult(odometryLogger);
+    logger_.PushBackColorMapResult(lastKeyFrame->frame->GetOriginalCloud(), T);
+    logger_.PushBackNonColorMapResult(lastKeyFrame->frame->GetOriginalCloud(), T);
+    logger_.PublishOdometryPoint();
+    logger_.PublishNonColorMapPointCloud();
+    logger_.PublishColorMapPointCloud();
     std::cout << "[System] Finished" << std::endl;
 
 //    sensor_->publishTransform(Twc * Tij_);
