@@ -50,10 +50,10 @@ private:
 
   pcl::PointCloud<pcl::PointXYZ>::Ptr odometryPointCloud_;
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr mapColorPointCloud_;
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr mapNonColorPointCloud_;
+  pcl::PointCloud<pcl::PointXYZ>::Ptr mapNonColorPointCloud_;
 
   octomap::ColorOcTree* colorTree_;
-  octomap::ColorOcTree* nonColorTree_;
+  octomap::OcTree* nonColorTree_;
 
   sensor_msgs::PointCloud2 odometryPC2;
   sensor_msgs::PointCloud2 mapPC2;

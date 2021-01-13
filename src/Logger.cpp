@@ -9,7 +9,7 @@ Logger::Logger(Config& config)
   , config_(config)
 {
   mapColorPointCloud_ = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
-  mapNonColorPointCloud_ = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
+  mapNonColorPointCloud_ = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
 
   odometryPointCloud_ = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
 
@@ -20,7 +20,7 @@ Logger::Logger(Config& config)
   nonColorMapPointCloudPub = nh_.advertise<sensor_msgs::PointCloud2>("/noncolor_octomap_result", 1);
 
   colorTree_ = new octomap::ColorOcTree(0.05);
-  nonColorTree_ = new octomap::ColorOcTree(0.05);
+  nonColorTree_ = new octomap::OcTree(0.05);
 
   voxelSize_ = config_.loggerConfig.voxelSize;
 }
@@ -37,6 +37,7 @@ void Logger::PushBackOdometryResult(pcl::PointXYZ odometryPoint)
 
 void Logger::PushBackColorMapResult(pcl::PointCloud<pcl::PointXYZRGB> mapCloud, Sophus::SE3f T)
 {
+  mapColorPointCloud_->clear();
   pcl::PointCloud<pcl::PointXYZRGB> temp;
 
   int border = config_.trackerConfig.border;
@@ -101,6 +102,7 @@ void Logger::PushBackColorMapResult(pcl::PointCloud<pcl::PointXYZRGB> mapCloud, 
 
 void Logger::PushBackNonColorMapResult(pcl::PointCloud<pcl::PointXYZRGB> mapCloud, Sophus::SE3f T)
 {
+  mapNonColorPointCloud_->clear();
   pcl::PointCloud<pcl::PointXYZRGB> temp;
   pcl::transformPointCloud(mapCloud, temp, T.matrix());
 
@@ -111,9 +113,9 @@ void Logger::PushBackNonColorMapResult(pcl::PointCloud<pcl::PointXYZRGB> mapClou
 
   nonColorTree_->updateInnerOccupancy();
 
-  pcl::PointXYZRGB Point;
+  pcl::PointXYZ Point;
 
-  for (octomap::ColorOcTree::tree_iterator it = nonColorTree_->begin_tree(), end = nonColorTree_->end_tree(); it != end; ++it) {
+  for (octomap::OcTree::tree_iterator it = nonColorTree_->begin_tree(), end = nonColorTree_->end_tree(); it != end; ++it) {
     if (nonColorTree_->isNodeOccupied(*it)) {
       Point.x = it.getX();
       Point.y = it.getY();
