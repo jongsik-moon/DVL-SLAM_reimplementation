@@ -84,6 +84,11 @@ struct LoggerConfig
 {
   float voxelSize;
 };
+
+struct SystemConfig
+{
+  float ratioThres;
+};
 class Config{
 public:
   Config();
@@ -97,6 +102,7 @@ public:
   TrackerConfig trackerConfig;
   PointCloudConfig pointcloudConfig;
   LoggerConfig loggerConfig;
+  SystemConfig systemConfig;
 
 private:
   void ReadEveryParameter(YAML::Node yamlFile);

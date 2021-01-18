@@ -61,3 +61,6 @@ Tracker:
 
 Logger:
   voxelSize: 0.02
+
+System:
+  ratioThres: 0.5

@@ -29,6 +29,7 @@ void Config::ReadEveryParameter(const YAML::Node yamlFile)
   YAML::Node trackerYaml = yamlFile["Tracker"];
   YAML::Node pointcloudYaml = yamlFile["PointCloud"];
   YAML::Node loggerYaml = yamlFile["Logger"];
+  YAML::Node systemYaml = yamlFile["System"];
 
   datasetConfig.isKitti = datasetYaml["isKitti"].as<bool>();
   datasetConfig.isIndoor = datasetYaml["isIndoor"].as<bool>();
@@ -84,4 +85,6 @@ void Config::ReadEveryParameter(const YAML::Node yamlFile)
   pointcloudConfig.maxZ = pointcloudYaml["maxZ"].as<float>();
 
   loggerConfig.voxelSize = loggerYaml["voxelSize"].as<float>();
+
+  systemConfig.ratioThres = systemYaml["ratioThres"].as<float>();
 }

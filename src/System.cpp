@@ -85,7 +85,7 @@ void System::Run(){
 
     currFrame->SetTwc(Twc * Tij_);
 
-    float ratio_threshold = 0.5;
+    float ratio_threshold = config_.systemConfig.ratioThres;
     std::cout << "[System] Find Keyframe" << std::endl;
 
     KeyFrame::Ptr currentKeyframe(new KeyFrame(config_, currFrame));
