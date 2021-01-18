@@ -8,7 +8,10 @@ System::System(Config& config)
   : config_(config),
     graphOptimizer_(config),
     tracker_(config),
-    logger_(config)
+    logger_(config),
+    Tij_(Eigen::Matrix3f::Identity(), Eigen::Vector3f(0.0f, 0.0f, 0.0f)),
+    Tji_(Eigen::Matrix3f::Identity(), Eigen::Vector3f(0.0f, 0.0f, 0.0f)),
+    dTji_(Eigen::Matrix3f::Identity(), Eigen::Vector3f(0.0f, 0.0f, 0.0f))
 {
   initialized_ = false;
 
@@ -33,12 +36,8 @@ void System::Run(){
   std::cout << "[System] frame class got data from sensor class" << std::endl;
 
   if(!initialized_){
-    Eigen::Matrix3f rot;
-    rot << 1.0, 0.0, 0.0,
-           0.0, 1.0, 0.0,
-           0.0, 0.0, 1.0;
+    Eigen::Matrix3f rot = Eigen::Matrix3f::Identity();
     Eigen::Vector3f twc(0, 0, 0);
-
 
     Sophus::SE3f initialTwc(rot, twc);
     currFrame->SetTwc(initialTwc);
@@ -49,6 +48,18 @@ void System::Run(){
 
     initialized_ = true;
 
+    pcl::PointXYZ odometryLogger;
+    odometryLogger.x = initialTwc.translation()[0];
+    odometryLogger.y = initialTwc.translation()[1];
+    odometryLogger.z = initialTwc.translation()[2];
+
+    logger_.PushBackOdometryResult(odometryLogger);
+    logger_.PushBackColorMapResult(currFrame->GetOriginalCloud(), initialTwc);
+    logger_.PushBackNonColorMapResult(currFrame->GetOriginalCloud(), initialTwc);
+    logger_.PublishOdometryPoint();
+    logger_.PublishNonColorMapPointCloud();
+    logger_.PublishColorMapPointCloud();
+
     std::cout << "[System] Initialized" << std::endl;
     return;
   }
@@ -58,7 +69,11 @@ void System::Run(){
 
     KeyFrame::Ptr lastKeyFrame = keyFrameDB_->LatestKeyframe();
 
+    Sophus::SE3f prevTji = Tji_;
+    Tji_ = Tji_ * dTji_;
+
     tracker_.trackFrame2Frame(currFrame, lastKeyFrame, Tji_);
+    dTji_ = Tji_ * prevTji.inverse();
     Tij_ = Tji_.inverse();
     std::cout << "[System] Tracking Finished" << std::endl;
 
@@ -70,7 +85,7 @@ void System::Run(){
 
     currFrame->SetTwc(Twc * Tij_);
 
-    float ratio_threshold = 1.0;
+    float ratio_threshold = 0.5;
     std::cout << "[System] Find Keyframe" << std::endl;
 
     KeyFrame::Ptr currentKeyframe(new KeyFrame(config_, currFrame));
@@ -85,21 +100,27 @@ void System::Run(){
     if(is_keyframe)
     {
       keyFrameDB_->Add(currentKeyframe);
+      pcl::PointXYZ odometryLogger;
+      odometryLogger.x = T.translation()[0];
+      odometryLogger.y = T.translation()[1];
+      odometryLogger.z = T.translation()[2];
+
+
+      logger_.PushBackOdometryResult(odometryLogger);
+      logger_.PushBackColorMapResult(currFrame->GetOriginalCloud(), T);
+      logger_.PushBackNonColorMapResult(currFrame->GetOriginalCloud(), T);
+      logger_.PublishOdometryPoint();
+      logger_.PublishNonColorMapPointCloud();
+      logger_.PublishColorMapPointCloud();
+
+      Tji_.rotationMatrix() = Eigen::Matrix3f::Identity();
+      Tji_.translation() = Eigen::Vector3f(0.0f, 0.0f, 0.0f);
+
       std::cout << "[System] Add KeyFrame" << std::endl;
+
     }
 
-    pcl::PointXYZ odometryLogger;
-    odometryLogger.x = T.translation()[0];
-    odometryLogger.y = T.translation()[1];
-    odometryLogger.z = T.translation()[2];
 
-
-    logger_.PushBackOdometryResult(odometryLogger);
-    logger_.PushBackColorMapResult(lastKeyFrame->frame->GetOriginalCloud(), T);
-    logger_.PushBackNonColorMapResult(lastKeyFrame->frame->GetOriginalCloud(), T);
-    logger_.PublishOdometryPoint();
-    logger_.PublishNonColorMapPointCloud();
-    logger_.PublishColorMapPointCloud();
     std::cout << "[System] Finished" << std::endl;
 
 //    sensor_->publishTransform(Twc * Tij_);

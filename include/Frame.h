@@ -36,8 +36,8 @@ public:
   void SetOriginalImg(cv::Mat originalImg);
   cv::Mat GetOriginalImg();
 
-  pcl::PointCloud<pcl::PointXYZRGB>& GetOriginalCloud();
-  void SetOriginalCloud(pcl::PointCloud<pcl::PointXYZRGB> originalCloud);
+  pcl::PointCloud<pcl::PointXYZRGB> GetOriginalCloud();
+  void SetOriginalCloud(pcl::PointCloud<pcl::PointXYZRGB>& originalCloud);
 
   Sophus::SE3f GetTwc();
   void SetTwc(Sophus::SE3f Twc);

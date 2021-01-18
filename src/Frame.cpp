@@ -55,14 +55,15 @@ void Frame::SetOriginalImg(cv::Mat originalImg){
   createImagePyramid();
 }
 
-pcl::PointCloud<pcl::PointXYZRGB>& Frame::GetOriginalCloud(){ return originalCloud_; }
+pcl::PointCloud<pcl::PointXYZRGB> Frame::GetOriginalCloud(){ return originalCloud_; }
 
-void Frame::SetOriginalCloud(pcl::PointCloud<pcl::PointXYZRGB> originalCloud)
+void Frame::SetOriginalCloud(pcl::PointCloud<pcl::PointXYZRGB>& originalCloud)
 {
+  originalCloud_.clear();
   int border = config_.trackerConfig.border;
-  this->originalCloud_ = originalCloud;
-  std::vector<Eigen::Vector2f> uvSet = pinholeModel_.PointCloudXyz2UvVec(originalCloud_, 1);
-  auto pointCloudIter = originalCloud_.begin();
+  std::vector<Eigen::Vector2f> uvSet = pinholeModel_.PointCloudXyz2UvVec(originalCloud, 1);
+  auto pointCloudIter = originalCloud.begin();
+  pcl::PointXYZRGB temp;
   for(auto uvIter=uvSet.begin(); uvIter!=uvSet.end(); ++uvIter, ++pointCloudIter){
     Eigen::Vector2f uv = *uvIter;
 
@@ -74,9 +75,14 @@ void Frame::SetOriginalCloud(pcl::PointCloud<pcl::PointXYZRGB> originalCloud)
     if(uInt - border < 0 || uInt + border > config_.imageConfig.width || vInt - border < 0 || vInt + border > config_.imageConfig.height || pointCloudIter->z <= 0.0){
       continue;
     }
-    pointCloudIter->b = 255*originalImg_.at<cv::Vec3f>(vInt, uInt)(0);
-    pointCloudIter->g = 255*originalImg_.at<cv::Vec3f>(vInt, uInt)(1);
-    pointCloudIter->r = 255*originalImg_.at<cv::Vec3f>(vInt, uInt)(2);
+    temp.b = 255*originalImg_.at<cv::Vec3f>(vInt, uInt)(0);
+    temp.g = 255*originalImg_.at<cv::Vec3f>(vInt, uInt)(1);
+    temp.r = 255*originalImg_.at<cv::Vec3f>(vInt, uInt)(2);
+    temp.x = pointCloudIter->x;
+    temp.y = pointCloudIter->y;
+    temp.z = pointCloudIter->z;
+
+    originalCloud_.push_back(temp);
 //    std::cout << "pointCloudIter->b = 255*originalImg_.at<cv::Vec3f>(vInt, uInt)(0)" << 255*originalImg_.at<cv::Vec3f>(vInt, uInt) << std::endl;
 //    std::cout << "pointCloudIter->b = 255*originalImg_.at<cv::Vec3f>(vInt, uInt)(0)" << 255*originalImg_.at<cv::Vec3f>(vInt, uInt)(0) << std::endl;
 //    std::cout << "pointCloudIter->b = 255*originalImg_.at<cv::Vec3f>(vInt, uInt)(1)" << 255*originalImg_.at<cv::Vec3f>(vInt, uInt)(1) << std::endl;

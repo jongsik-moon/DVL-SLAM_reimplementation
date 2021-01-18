@@ -36,6 +36,7 @@ private:
 
   Sophus::SE3f Tij_;
   Sophus::SE3f Tji_;
+  Sophus::SE3f dTji_;
 
   FrameDB::Ptr frameDB_;
   KeyFrameDB::Ptr keyFrameDB_;

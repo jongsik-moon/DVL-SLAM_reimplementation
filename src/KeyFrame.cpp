@@ -29,25 +29,35 @@ float KeyFrame::GetVisibleRatio (const KeyFrame::Ptr keyframe)
 
   const float scale = 1.0f / (1 << currentLevel);
 
-  int visible_points = 0;
+  int visiblePoints = 0;
+  int inCameraPoints = 0;
 
-  for (auto iter=keyframe->frame->GetOriginalCloud().begin(); iter!=keyframe->frame->GetOriginalCloud().end(); ++iter) {
-    Eigen::Vector3f xyz_cur (iter->x, iter->y, iter->z);
-    Eigen::Vector3f xyz_prev = Tij*xyz_cur;
-    Eigen::Vector2f uv_prev;
-    uv_prev.noalias() = pinholeModel_.PointCloudXyz2Uv(xyz_prev) * scale;
+  std::cout << "[KeyFrame] Start2 GetVisibleRatio" << std::endl;
+
+  pcl::PointCloud<pcl::PointXYZRGB> currFramePointCloud = keyframe->frame->GetOriginalCloud();
+
+  Eigen::Affine3f transformPitch(Tij.matrix());
+  pcl::transformPointCloud(currFramePointCloud, currFramePointCloud, transformPitch);
+  std::vector<Eigen::Vector2f> uvSet = pinholeModel_.PointCloudXyz2UvVec(currFramePointCloud, scale);
+  auto pointCloudIter = currFramePointCloud.begin();
+
+  for (auto iter=uvSet.begin(); iter!=uvSet.end(); ++iter, ++pointCloudIter) {
+
+    Eigen::Vector2f uv_prev = *iter;
 
     const float u_prev_f = uv_prev(0);
     const float v_prev_f = uv_prev(1);
     const int u_prev_i = static_cast<int> (u_prev_f);
     const int v_prev_i = static_cast<int> (v_prev_f);
 
-    if (u_prev_i - border < 0 || u_prev_i + border > config_.imageConfig.width || v_prev_i - border < 0 || v_prev_i + border > config_.imageConfig.height || xyz_prev(2) <= 0)
+    if (u_prev_i - border < 0 || u_prev_i + border > config_.imageConfig.width || v_prev_i - border < 0 || v_prev_i + border > config_.imageConfig.height || pointCloudIter->z <= 0)
       continue;
 
-    visible_points++;
+    visiblePoints++;
 
   }
+  std::cout << "[KeyFrame] visible_points : " << visiblePoints << std::endl;
+  std::cout << "[KeyFrame] keyframe->frame->GetOriginalCloud().size() : " << keyframe->frame->GetOriginalCloud().size() << std::endl;
 
-  return static_cast<float> (visible_points) / static_cast<float> (keyframe->frame->GetOriginalCloud().size());
+  return static_cast<float> (visiblePoints) / static_cast<float> (keyframe->frame->GetOriginalCloud().size());
 }

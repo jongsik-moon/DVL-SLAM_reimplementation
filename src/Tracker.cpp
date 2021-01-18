@@ -252,7 +252,7 @@ double Tracker::ComputeResiduals(Sophus::SE3f &transformation)
   if (!isPreComputed_)
   {
     cv::Mat &referenceImg = referenceFrame_->frame->GetPyramidImg(currentLevel_);
-    pcl::PointCloud<pcl::PointXYZRGB> &referencePointCloud = referenceFrame_->frame->GetOriginalCloud();
+    pcl::PointCloud<pcl::PointXYZRGB> referencePointCloud = referenceFrame_->frame->GetOriginalCloud();
     refImgClone = PrecomputePatches(referenceImg, referencePointCloud, refPatchBuf_, true);
     isPreComputed_ = true;
   }

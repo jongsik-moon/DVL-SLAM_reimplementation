@@ -19,10 +19,10 @@ Logger::Logger(Config& config)
   colorMapPointCloudPub = nh_.advertise<sensor_msgs::PointCloud2>("/color_map_result", 1);
   nonColorMapPointCloudPub = nh_.advertise<sensor_msgs::PointCloud2>("/noncolor_octomap_result", 1);
 
-  colorTree_ = new octomap::ColorOcTree(0.05);
-  nonColorTree_ = new octomap::OcTree(0.05);
-
   voxelSize_ = config_.loggerConfig.voxelSize;
+
+  colorTree_ = new octomap::ColorOcTree(voxelSize_);
+  nonColorTree_ = new octomap::OcTree(voxelSize_);
 }
 
 Logger::~Logger()
@@ -86,7 +86,7 @@ void Logger::PushBackColorMapResult(pcl::PointCloud<pcl::PointXYZRGB> mapCloud, 
   colorTree_->updateInnerOccupancy();
 
   pcl::PointXYZRGB Point;
-  for (octomap::ColorOcTree::tree_iterator it = colorTree_->begin_tree(), end = colorTree_->end_tree(); it != end; ++it) {
+  for (octomap::ColorOcTree::leaf_iterator it = colorTree_->begin_leafs(), end = colorTree_->end_leafs(); it != end; ++it) {
     if (colorTree_->isNodeOccupied(*it)) {
       Point.x = it.getX();
       Point.y = it.getY();
@@ -115,7 +115,7 @@ void Logger::PushBackNonColorMapResult(pcl::PointCloud<pcl::PointXYZRGB> mapClou
 
   pcl::PointXYZ Point;
 
-  for (octomap::OcTree::tree_iterator it = nonColorTree_->begin_tree(), end = nonColorTree_->end_tree(); it != end; ++it) {
+  for (octomap::OcTree::leaf_iterator it = nonColorTree_->begin_leafs(), end = nonColorTree_->end_leafs(); it != end; ++it) {
     if (nonColorTree_->isNodeOccupied(*it)) {
       Point.x = it.getX();
       Point.y = it.getY();

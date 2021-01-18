@@ -58,8 +58,6 @@ private:
   sensor_msgs::PointCloud2 odometryPC2;
   sensor_msgs::PointCloud2 mapPC2;
 
-  octomap_msgs::Octomap mapOcto_;
-
   ros::NodeHandle nh_;
 
   ros::Publisher transPub;

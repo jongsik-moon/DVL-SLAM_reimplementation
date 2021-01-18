@@ -2,8 +2,8 @@ Dataset:
   isKitti: true
   isIndoor: false
   useRos: false
-  imgDir: "/home/jongsik/temp_work/kitti2bag/2011_09_30/2011_09_30_drive_0020_sync/image_02/data/"
-  lidarDir: "/home/jongsik/temp_work/kitti2bag/2011_09_30/2011_09_30_drive_0020_sync/velodyne_points/csv/"
+  imgDir: "/home/jongsik/temp_work/kitti2bag/2011_09_30/2011_09_30_drive_0020_sync/image_02/data_temp/"
+  lidarDir: "/home/jongsik/temp_work/kitti2bag/2011_09_30/2011_09_30_drive_0020_sync/velodyne_points/data_temp/"
   visualize: false
 
 Camera:
@@ -60,4 +60,4 @@ Tracker:
   border: 6
 
 Logger:
-  voxelSize: 0.03
+  voxelSize: 0.02

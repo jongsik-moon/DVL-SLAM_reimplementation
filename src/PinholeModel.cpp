@@ -37,10 +37,6 @@ std::vector<Eigen::Vector2f> PinholeModel::PointCloudXyz2UvVec(const pcl::PointC
 //    std::cout << "[PinholeModel] U : " << U << std::endl;
     Eigen::Vector2f uv(U, V);
     uvSet.push_back(uv*scale);
-    if(std::isfinite(U) & std::isfinite(V))
-    {
-
-    }
   }
   return uvSet;
 }
